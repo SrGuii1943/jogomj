@@ -106,19 +106,19 @@
 
                     <!-- Grid de Músicas -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        <button onclick="selectTrack('beatmj.mp3', 'Beat It - MJ')" id="btn-beat" class="btn-celestial py-2.5 px-4 rounded-lg text-xs tracking-wider font-medium text-left flex items-center justify-between hover:text-white text-slate-400">
+                        <button onclick="selectTrack('beatmj.mp3', 'Beat It - MJ', 'btn-beat')" id="btn-beat" class="btn-celestial py-2.5 px-4 rounded-lg text-xs tracking-wider font-medium text-left flex items-center justify-between hover:text-white text-slate-400">
                             <span class="truncate">1. Beat It</span>
                             <i data-lucide="play-circle" class="w-4 h-4 text-slate-500 hover-target"></i>
                         </button>
-                        <button onclick="selectTrack('billiemj.mp3', 'Billie Jean - MJ')" id="btn-billie" class="btn-celestial py-2.5 px-4 rounded-lg text-xs tracking-wider font-medium text-left flex items-center justify-between hover:text-white text-slate-400">
+                        <button onclick="selectTrack('billiemj.mp3', 'Billie Jean - MJ', 'btn-billie')" id="btn-billie" class="btn-celestial py-2.5 px-4 rounded-lg text-xs tracking-wider font-medium text-left flex items-center justify-between hover:text-white text-slate-400">
                             <span class="truncate">2. Billie Jean</span>
                             <i data-lucide="play-circle" class="w-4 h-4 text-slate-500 hover-target"></i>
                         </button>
-                        <button onclick="selectTrack('badmj.mp3', 'Bad - MJ')" id="btn-bad" class="btn-celestial py-2.5 px-4 rounded-lg text-xs tracking-wider font-medium text-left flex items-center justify-between hover:text-white text-slate-400">
+                        <button onclick="selectTrack('badmj.mp3', 'Bad - MJ', 'btn-bad')" id="btn-bad" class="btn-celestial py-2.5 px-4 rounded-lg text-xs tracking-wider font-medium text-left flex items-center justify-between hover:text-white text-slate-400">
                             <span class="truncate">3. Bad</span>
                             <i data-lucide="play-circle" class="w-4 h-4 text-slate-500 hover-target"></i>
                         </button>
-                        <button onclick="selectTrack('olodummj.mp3', 'They Don\'t Care (Olodum)')" id="btn-olodum" class="btn-celestial py-2.5 px-4 rounded-lg text-xs tracking-wider font-medium text-left flex items-center justify-between hover:text-white text-slate-400">
+                        <button onclick="selectTrack('olodummj.mp3', 'They Dont Care (Olodum)', 'btn-olodum')" id="btn-olodum" class="btn-celestial py-2.5 px-4 rounded-lg text-xs tracking-wider font-medium text-left flex items-center justify-between hover:text-white text-slate-400">
                             <span class="truncate">4. Olodum Mix</span>
                             <i data-lucide="play-circle" class="w-4 h-4 text-slate-500 hover-target"></i>
                         </button>
@@ -314,6 +314,7 @@
         let mouse = { x: null, y: null, vx: 0, vy: 0, lastX: null, lastY: null, radius: 120 };
         let isPlaying = false;
         let colorPulse = 0;
+        let speedFactor = 0.5;
 
         // Configuração de tamanho do canvas adaptável
         function resizeCanvas() {
@@ -331,7 +332,7 @@
                 this.homeY = this.y;
                 this.vx = 0;
                 this.vy = 0;
-                this.baseSize = Math.random() * 1.5 + 0.8;
+                this.baseSize = Math.random() * 1.5 + 0.5;
                 this.size = this.baseSize;
                 this.baseColor = { r: 180, g: 210, b: 255 };
                 this.hueOffset = Math.random() * 60; // Variação de cor individual
@@ -380,8 +381,8 @@
                 this.vy *= 0.88;
 
                 // Move a partícula
-                this.x += this.vx;
-                this.y += this.vy;
+                this.x += this.vx * speedFactor;
+                this.y += this.vy * speedFactor;
 
                 // Pequena flutuação aleatória natural (vento estelar)
                 this.x += Math.sin(Date.now() * 0.001 + this.homeY) * 0.05;
@@ -505,13 +506,19 @@
         // ================= SISTEMA DO PLAYER E COMPORTAMENTO =================
 
         // Selecionar e Reproduzir Faixa
-        function selectTrack(fileName, trackName) {
+        function selectTrack(fileName, trackName, buttonId) {
             playSfx('click');
             
             // Remove destaque ativo de botões anteriores
-            document.querySelectorAll('.btn-celestial').forEach(btn => {
+            document.querySelectorAll('[id^="btn-"]').forEach(btn => {
                 btn.classList.remove('border-purple-400', 'text-white', 'bg-white/10');
             });
+
+            // Adiciona destaque ao botão selecionado
+            const activeBtn = document.getElementById(buttonId);
+            if (activeBtn) {
+                activeBtn.classList.add('border-purple-400', 'text-white', 'bg-white/10');
+            }
 
             // Altera fonte e toca
             musicPlayer.src = fileName;
@@ -531,6 +538,11 @@
             musicPlayer.pause();
             isPlaying = false;
             updateStatusUI(null);
+            
+            // Remove destaque de botões de música ativos ao pausar
+            document.querySelectorAll('[id^="btn-"]').forEach(btn => {
+                btn.classList.remove('border-purple-400', 'text-white', 'bg-white/10');
+            });
         }
 
         // Alterar Volume
@@ -569,7 +581,7 @@
             initParticles();
         }
 
-        // Change mouse gravity radius
+        // Altera raio de gravidade do mouse
         function changeRadius(val) {
             mouse.radius = parseInt(val);
             document.getElementById('gravityRadiusVal').innerText = `${val}px`;
@@ -583,7 +595,7 @@
             m.classList.add('flex');
         }
 
-        // Close modais
+        // Fecha modais
         function closeModal(id) {
             playSfx('click');
             const m = document.getElementById(`modal-${id}`);
