@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cosmic Odyssey - Menu Principal</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Cinzel (Celestial/Clássico) e Space Grotesk (Tech/Moderno) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background-color: #030308;
+            overflow: hidden;
+            user-select: none;
+        }
+        .title-celestial {
+            font-family: 'Cinzel', serif;
+            text-shadow: 0 0 20px rgba(147, 197, 253, 0.3), 0 0 40px rgba(147, 197, 253, 0.1);
+        }
+        /* Efeito de brilho estelar para botões */
+        .btn-celestial {
+            position: relative;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+            backdrop-filter: blur(8px);
+        }
+        .btn-celestial::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at var(--x, 50%) var(--y, 50%), rgba(255, 255, 255, 0.15) 0%, transparent 50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .btn-celestial:hover::before {
+            opacity: 1;
+        }
+        .btn-celestial:hover {
+            border-color: rgba(147, 197, 253, 0.6);
+            box-shadow: 0 0 25px rgba(147, 197, 253, 0.2);
+            transform: translateY(-2px) scale(1.02);
+            background: rgba(255, 255, 255, 0.07);
+        }
+        
+        /* Animação de Pulsar Celestial */
+        @keyframes pulseGlow {
+            0%, 100% { opacity: 0.3; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(1.05); }
+        }
+        .pulse-glow {
+            animation: pulseGlow 4s infinite ease-in-out;
+        }
+    </style>
+</head>
+<body class="h-full relative flex flex-col items-center justify-center text-white">
+
+    <!-- CAMADA z-[4]: Canvas de Partículas Estelares (Sutilmente integrado sobrepondo o vídeo de fundo) -->
+    <canvas id="starfield" class="absolute inset-0 z-[4] pointer-events-none mix-blend-screen opacity-40"></canvas>
+
+    <!-- Áudio de Fundo (musicafundomj.mp3) -->
+    <audio id="bgMusic" src="musicafundomj.mp3" loop></audio>
+
+    <!-- Efeitos Sonoros Dinâmicos (Web Audio API) -->
+    <script>
+        const playSfx = (type) => {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                
+                if (type === 'hover') {
+                    osc.frequency.setValueAtTime(180, ctx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(280, ctx.currentTime + 0.15);
+                    gain.gain.setValueAtTime(0.01, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+                    osc.start();
+                    osc.stop(ctx.currentTime + 0.15);
+                } else if (type === 'click') {
+                    osc.frequency.setValueAtTime(150, ctx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(450, ctx.currentTime + 0.3);
+                    gain.gain.setValueAtTime(0.05, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+                    osc.start();
+                    osc.stop(ctx.currentTime + 0.3);
+                } else if (type === 'play') {
+                    osc.frequency.setValueAtTime(100, ctx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 1.5);
+                    gain.gain.setValueAtTime(0.08, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.5);
+                    osc.start();
+                    osc.stop(ctx.currentTime + 1.5);
+                }
+            } catch (e) { /* Fallback silencioso */ }
+        };
+    </script>
+
+    <!-- CAMADA z-[2]: FUNDO DE VÍDEO PRINCIPAL (mjmj.mp4) - Posicionado explicitamente para renderizar acima do body e em loop infinito -->
+    <video id="bgVideo" loop muted playsinline autoplay preload="auto" style="opacity: 0; position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover;"
+           class="absolute inset-0 z-[2] pointer-events-none transition-opacity duration-[3000ms] ease-in-out">
+        <source src="mjmj.mp4" type="video/mp4">
+    </video>
+
+    <!-- CAMADA z-[3]: Overlay de Escurecimento Sutil (Garante contraste ideal para leitura dos botões) -->
+    <div class="absolute inset-0 bg-[#020205]/40 z-[3] pointer-events-none"></div>
+
+    <!-- ================= FASE 1: TELA DE DESPERTAR (Resolução de Autoplay) ================= -->
+    <div id="interactionScreen" class="absolute inset-0 z-50 bg-[#020205] flex flex-col items-center justify-center cursor-pointer transition-all duration-1000">
+        <div class="text-center p-6 space-y-8 select-none">
+            <div class="relative flex items-center justify-center h-48 w-48 mx-auto">
+                <div class="absolute inset-0 rounded-full border border-blue-500/20 pulse-glow"></div>
+                <div class="absolute inset-4 rounded-full border border-purple-500/30 animate-spin" style="animation-duration: 25s;"></div>
+                <svg class="w-16 h-16 text-blue-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-12.728l.707.707m11.314 11.314l.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z" />
+                </svg>
+            </div>
+            <div class="space-y-3">
+                <h2 class="title-celestial text-2xl tracking-[0.4em] text-blue-200/80 uppercase font-light">Sinfonia Cósmica</h2>
+                <p class="text-sm tracking-wider text-slate-400 font-light">CLIQUE EM QUALQUER LUGAR PARA INICIAR A VIAGEM</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= FASE 2: INTRO CINEMÁTICA ESTILO WARNER BROS ================= -->
+    <div id="introScreen" class="absolute inset-0 z-40 bg-[#020205] hidden flex-col items-center justify-center transition-all duration-1500 opacity-0">
+        <div class="text-center space-y-6">
+            <div id="introLogoContainer" class="scale-90 opacity-0 transition-all duration-[3000ms] ease-out">
+                <div class="relative inline-block">
+                    <div class="absolute -inset-10 bg-amber-500/15 rounded-full blur-3xl opacity-60"></div>
+                    <h3 class="title-celestial text-6xl tracking-[0.25em] font-black text-transparent bg-clip-text bg-gradient-to-b from-amber-200 via-amber-400 to-amber-600 drop-shadow-[0_0_30px_rgba(245,158,11,0.3)]">
+                        MJ STUDIOS
+                    </h3>
+                    <div class="w-full h-[1px] bg-gradient-to-r from-transparent via-amber-400/60 to-transparent mt-4"></div>
+                    <p class="text-xs uppercase tracking-[0.5em] text-amber-200/70 mt-3 font-light">Apresenta uma nova jornada cósmica</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= FASE 3: INTERFACE DO MENU PRINCIPAL ================= -->
+    <div id="mainInterface" class="relative z-[10] w-full h-full flex flex-col justify-between p-8 md:p-16 opacity-0 transition-opacity duration-[2000ms] pointer-events-none select-none">
+        
+        <!-- Topo da Interface: Info de Conexão e Versão -->
+        <header class="w-full flex justify-between items-center text-xs tracking-[0.2em] text-slate-200 font-light drop-shadow-md">
+            <div class="flex items-center gap-2 bg-black/30 px-3 py-1.5 rounded-full border border-white/5 backdrop-blur-sm">
+                <span class="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span>SERVIDOR: GALÁXIA CENTRAL</span>
+            </div>
+            <div class="flex items-center gap-6">
+                <span class="hidden md:inline bg-black/30 px-3 py-1.5 rounded-full border border-white/5 backdrop-blur-sm">V0.9.8 BETA</span>
+                <!-- Controle de Som Rápido -->
+                <button onclick="toggleAudio()" class="hover:text-blue-200 transition-colors flex items-center gap-2 p-1.5 bg-black/40 rounded border border-white/10 backdrop-blur" title="Silenciar Música">
+                    <i data-lucide="music" class="w-4 h-4" id="audioIcon"></i>
+                    <span id="audioStatusText" class="text-[9px]">ÁUDIO ATIVO</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Centro: Título do Jogo -->
+        <main class="flex flex-col items-center justify-center flex-grow py-12 text-center">
+            <div class="space-y-4 max-w-4xl">
+                <!-- Selo de Categoria Cósmica -->
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-400/20 text-blue-300 text-[10px] tracking-[0.3em] uppercase backdrop-blur-sm">
+                    <i data-lucide="sparkles" class="w-3 h-3"></i> RPG DE AVENTURA GALÁCTICA
+                </div>
+
+                <h1 class="title-celestial text-5xl md:text-8xl tracking-[0.18em] font-extrabold uppercase text-transparent bg-clip-text bg-gradient-to-b from-white via-slate-100 to-blue-200/90 drop-shadow-[0_5px_25px_rgba(0,0,0,0.95)]">
+                    COSMIC<br><span class="text-4xl md:text-7xl font-light tracking-[0.4em] text-blue-100">ODYSSEY</span>
+                </h1>
+                
+                <p class="text-xs md:text-sm tracking-[0.4em] text-slate-200 uppercase font-light max-w-lg mx-auto drop-shadow-md">
+                    Desbrave a fronteira final em direção ao desconhecido
+                </p>
+            </div>
+
+            <!-- Botão Gigante de JOGAR (Visual Clássico e Celestial) -->
+            <div class="mt-12 group relative">
+                <div class="absolute -inset-1 bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 rounded-full blur opacity-30 group-hover:opacity-75 transition duration-1000 group-hover:duration-200"></div>
+                <button onclick="triggerGameStart()" onmouseenter="playSfx('hover')" 
+                        class="relative px-12 py-5 bg-[#070714]/90 border border-blue-300/30 rounded-full text-lg font-bold uppercase tracking-[0.3em] text-blue-100 overflow-hidden transition-all duration-300 shadow-[0_0_30px_rgba(59,130,246,0.3)] hover:border-blue-300 hover:text-white group-hover:scale-105 active:scale-95 flex items-center gap-3">
+                    <span class="relative z-10">JOGAR</span>
+                    <i data-lucide="play" class="w-5 h-5 relative z-10 fill-current text-blue-200 group-hover:translate-x-1 transition-transform"></i>
+                </button>
+            </div>
+        </main>
+
+        <!-- Base: Menu de Botões Adicionais -->
+        <footer class="w-full max-w-4xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-4 pb-4">
+            <button onclick="openModal('topGlobal')" onmouseenter="playSfx('hover')" class="btn-celestial py-3.5 px-6 rounded-lg text-xs md:text-sm tracking-[0.2em] font-medium uppercase text-slate-200 hover:text-white flex items-center justify-center gap-2">
+                <i data-lucide="trophy" class="w-4 h-4 text-amber-400/80"></i> Top Global
+            </button>
+            <button onclick="openModal('loja')" onmouseenter="playSfx('hover')" class="btn-celestial py-3.5 px-6 rounded-lg text-xs md:text-sm tracking-[0.2em] font-medium uppercase text-slate-200 hover:text-white flex items-center justify-center gap-2">
+                <i data-lucide="shopping-bag" class="w-4 h-4 text-emerald-400/80"></i> Loja
+            </button>
+            <button onclick="openModal('opcoes')" onmouseenter="playSfx('hover')" class="btn-celestial py-3.5 px-6 rounded-lg text-xs md:text-sm tracking-[0.2em] font-medium uppercase text-slate-200 hover:text-white flex items-center justify-center gap-2">
+                <i data-lucide="sliders" class="w-4 h-4 text-blue-400/80"></i> Opções
+            </button>
+            <button onclick="openModal('sair')" onmouseenter="playSfx('hover')" class="btn-celestial py-3.5 px-6 rounded-lg text-xs md:text-sm tracking-[0.2em] font-medium uppercase text-slate-200 hover:text-red-400">
+                <i data-lucide="log-out" class="w-4 h-4 text-red-500/80"></i> Sair
+            </button>
+        </footer>
+    </div>
+
+    <!-- ================= MODAIS DE NAVEGAÇÃO INTERATIVOS ================= -->
+
+    <!-- Modal: TOP GLOBAL -->
+    <div id="modal-topGlobal" class="fixed inset-0 z-50 bg-[#020205]/90 backdrop-blur-md hidden flex items-center justify-center p-4">
+        <div class="bg-gradient-to-b from-[#0a0a1a] to-[#04040d] border border-blue-500/20 max-w-xl w-full rounded-2xl p-6 md:p-8 space-y-6 relative">
+            <button onclick="closeModal('topGlobal')" class="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors">
+                <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
+            <div class="text-center space-y-2">
+                <i data-lucide="trophy" class="w-12 h-12 text-amber-400 mx-auto"></i>
+                <h3 class="title-celestial text-2xl font-bold tracking-[0.2em] text-blue-200">LÍDERES INTERGALÁCTICOS</h3>
+                <p class="text-[10px] text-slate-400 tracking-[0.2em] uppercase">Os maiores exploradores do cosmos</p>
+            </div>
+            
+            <div class="space-y-3 max-h-72 overflow-y-auto pr-2">
+                <!-- Rank 1 -->
+                <div class="flex items-center justify-between p-3 rounded-lg bg-amber-500/5 border border-amber-500/20">
+                    <div class="flex items-center gap-3">
+                        <span class="font-bold text-amber-400 text-lg">#1</span>
+                        <span class="font-medium tracking-wide">AstroExplorer_X</span>
+                    </div>
+                    <span class="font-mono text-xs text-amber-200">1,245,900 pts</span>
+                </div>
+                <!-- Rank 2 -->
+                <div class="flex items-center justify-between p-3 rounded-lg bg-slate-500/5 border border-slate-500/10">
+                    <div class="flex items-center gap-3">
+                        <span class="font-bold text-slate-300 text-lg">#2</span>
+                        <span class="font-medium tracking-wide">OrionPilot_88</span>
+                    </div>
+                    <span class="font-mono text-xs text-slate-300">985,400 pts</span>
+                </div>
+                <!-- Rank 3 -->
+                <div class="flex items-center justify-between p-3 rounded-lg bg-amber-700/5 border border-amber-700/10">
+                    <div class="flex items-center gap-3">
+                        <span class="font-bold text-amber-600 text-lg">#3</span>
+                        <span class="font-medium tracking-wide">NebulaLord</span>
+                    </div>
+                    <span class="font-mono text-xs text-amber-600">842,100 pts</span>
+                </div>
+                <!-- Rank 4 -->
+                <div class="flex items-center justify-between p-3 rounded-lg bg-white/2 border border-white/5">
+                    <div class="flex items-center gap-3">
+                        <span class="font-bold text-slate-500 text-sm">#4</span>
+                        <span class="font-medium tracking-wide text-slate-300">CosmicVoid</span>
+                    </div>
+                    <span class="font-mono text-xs text-slate-400">710,500 pts</span>
+                </div>
+            </div>
+            <button onclick="closeModal('topGlobal')" class="w-full py-3 bg-blue-600 hover:bg-blue-500 transition-colors rounded-lg font-bold text-xs uppercase tracking-[0.2em]">FECHAR</button>
+        </div>
+    </div>
+
+    <!-- Modal: LOJA CELESTIAL -->
+    <div id="modal-loja" class="fixed inset-0 z-50 bg-[#020205]/90 backdrop-blur-md hidden flex items-center justify-center p-4">
+        <div class="bg-gradient-to-b from-[#0a0a1a] to-[#04040d] border border-blue-500/20 max-w-2xl w-full rounded-2xl p-6 md:p-8 space-y-6 relative">
+            <button onclick="closeModal('loja')" class="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors">
+                <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
+            <div class="text-center space-y-2">
+                <i data-lucide="shopping-bag" class="w-12 h-12 text-emerald-400 mx-auto"></i>
+                <h3 class="title-celestial text-2xl font-bold tracking-[0.2em] text-blue-200">LOJA ESTELAR</h3>
+                <p class="text-[10px] text-slate-400 tracking-[0.2em] uppercase">Compre relíquias e skins com matéria escura</p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Item 1 -->
+                <div class="p-4 rounded-xl bg-white/5 border border-white/10 flex flex-col justify-between space-y-3">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h4 class="font-bold text-sm tracking-wide">Pele Cósmica: Andromeda</h4>
+                            <p class="text-xs text-slate-400">Visual dinâmico de constelação viva.</p>
+                        </div>
+                        <span class="px-2 py-1 rounded bg-blue-500/20 text-blue-300 text-[10px] font-bold">LENDÁRIO</span>
+                    </div>
+                    <div class="flex justify-between items-center pt-2">
+                        <span class="text-xs font-mono text-emerald-400 flex items-center gap-1">
+                            <i data-lucide="gem" class="w-3.5 h-3.5"></i> 250 Matéria
+                        </span>
+                        <button class="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-[10px] uppercase font-bold rounded transition-colors">ADQUIRIR</button>
+                    </div>
+                </div>
+                <!-- Item 2 -->
+                <div class="p-4 rounded-xl bg-white/5 border border-white/10 flex flex-col justify-between space-y-3">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h4 class="font-bold text-sm tracking-wide">Propulsor Quantum</h4>
+                            <p class="text-xs text-slate-400">Aumenta os rastros de partículas de dobra.</p>
+                        </div>
+                        <span class="px-2 py-1 rounded bg-purple-500/20 text-purple-300 text-[10px] font-bold">ÉPICO</span>
+                    </div>
+                    <div class="flex justify-between items-center pt-2">
+                        <span class="text-xs font-mono text-emerald-400 flex items-center gap-1">
+                            <i data-lucide="gem" class="w-3.5 h-3.5"></i> 120 Matéria
+                        </span>
+                        <button class="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-[10px] uppercase font-bold rounded transition-colors">ADQUIRIR</button>
+                    </div>
+                </div>
+            </div>
+            <button onclick="closeModal('loja')" class="w-full py-3 bg-blue-600 hover:bg-blue-500 transition-colors rounded-lg font-bold text-xs uppercase tracking-[0.2em]">VOLTAR AO MENU</button>
+        </div>
+    </div>
+
+    <!-- Modal: OPÇÕES -->
+    <div id="modal-opcoes" class="fixed inset-0 z-50 bg-[#020205]/90 backdrop-blur-md hidden flex items-center justify-center p-4">
+        <div class="bg-gradient-to-b from-[#0a0a1a] to-[#04040d] border border-blue-500/20 max-w-xl w-full rounded-2xl p-6 md:p-8 space-y-6 relative">
+            <button onclick="closeModal('opcoes')" class="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors">
+                <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
+            <div class="text-center space-y-2">
+                <i data-lucide="sliders" class="w-12 h-12 text-blue-400 mx-auto"></i>
+                <h3 class="title-celestial text-2xl font-bold tracking-[0.2em] text-blue-200">CENTRAL DE OPÇÕES</h3>
+                <p class="text-[10px] text-slate-400 tracking-[0.2em] uppercase">Configure sua experiência galáctica</p>
+            </div>
+            
+            <div class="space-y-4">
+                <!-- Controle de Volume -->
+                <div class="space-y-2">
+                    <div class="flex justify-between text-xs tracking-wider">
+                        <span class="text-slate-300">Volume da Música</span>
+                        <span id="volumeVal" class="text-blue-300 font-mono">100%</span>
+                    </div>
+                    <input type="range" id="volumeSlider" min="0" max="100" value="100" oninput="updateVolume(this.value)"
+                           class="w-full accent-blue-500 bg-white/10 h-1.5 rounded-lg appearance-none cursor-pointer">
+                </div>
+
+                <!-- Qualidade de Vídeo de Fundo -->
+                <div class="space-y-2">
+                    <span class="text-xs text-slate-300 tracking-wider">Qualidade Cinematográfica</span>
+                    <div class="grid grid-cols-3 gap-2">
+                        <button onclick="setQuality('low')" id="btn-q-low" class="py-2 rounded bg-white/5 border border-white/10 text-xs hover:bg-white/10">Pouco Brilho</button>
+                        <button onclick="setQuality('mid')" id="btn-q-mid" class="py-2 rounded bg-white/5 border border-white/10 text-xs hover:bg-white/10">Padrão</button>
+                        <button onclick="setQuality('high')" id="btn-q-high" class="py-2 rounded bg-blue-500/20 border border-blue-500/50 text-xs font-bold">Ultra Cósmico</button>
+                    </div>
+                </div>
+
+                <!-- Teclas de Atalho -->
+                <div class="space-y-2">
+                    <span class="text-xs text-slate-300 tracking-wider">Controles Rápidos</span>
+                    <div class="p-3 rounded-lg bg-white/2 border border-white/5 space-y-1.5 text-xs text-slate-400">
+                        <div class="flex justify-between"><span>[Espaço] ou [Enter]</span> <span class="text-blue-300">Começar Jogo</span></div>
+                        <div class="flex justify-between"><span>[M]</span> <span class="text-blue-300">Mudar Som</span></div>
+                        <div class="flex justify-between"><span>[Esc]</span> <span class="text-blue-300">Fechar Menus</span></div>
+                    </div>
+                </div>
+            </div>
+            <button onclick="closeModal('opcoes')" class="w-full py-3 bg-blue-600 hover:bg-blue-500 transition-colors rounded-lg font-bold text-xs uppercase tracking-[0.2em]">SALVAR E RETORNAR</button>
+        </div>
+    </div>
+
+    <!-- Modal: CONFIRMAR SAÍDA -->
+    <div id="modal-sair" class="fixed inset-0 z-50 bg-[#020205]/95 backdrop-blur-md hidden flex items-center justify-center p-4">
+        <div class="bg-gradient-to-b from-[#0a0a1a] to-[#04040d] border border-red-500/20 max-w-md w-full rounded-2xl p-6 md:p-8 space-y-6 text-center">
+            <i data-lucide="alert-triangle" class="w-16 h-16 text-red-500 mx-auto animate-pulse"></i>
+            <div class="space-y-2">
+                <h3 class="title-celestial text-2xl font-bold tracking-[0.2em] text-red-200">INTERROMPER ÓRBITA?</h3>
+                <p class="text-xs text-slate-400 leading-relaxed">Você tem certeza que deseja sair de sua navegação interestelar?</p>
+            </div>
+            <div class="grid grid-cols-2 gap-4 pt-2">
+                <button onclick="closeModal('sair')" class="py-3 bg-white/5 border border-white/10 hover:bg-white/10 transition-colors rounded-lg text-xs font-bold uppercase tracking-wider">PERMANECER</button>
+                <button onclick="exitGame()" class="py-3 bg-red-600/30 border border-red-500/50 hover:bg-red-600 transition-colors rounded-lg text-xs font-bold uppercase tracking-wider text-red-200">SAIR DO JOGO</button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ================= SISTEMAS JAVASCRIPT EM JOGO ================= -->
+    <script>
+        // Inicializar ícones do Lucide
+        lucide.createIcons();
+
+        // Variáveis de Estado
+        let audioMuted = false;
+        const bgMusic = document.getElementById('bgMusic');
+        const bgVideo = document.getElementById('bgVideo');
+
+        // Inicializar Sistema de Estrelas Interativas (Starfield)
+        const canvas = document.getElementById('starfield');
+        const ctx = canvas.getContext('2d');
+        let stars = [];
+        let speedFactor = 0.5;
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            initStars();
+        }
+
+        function initStars() {
+            stars = [];
+            const count = Math.min(250, Math.floor((canvas.width * canvas.height) / 6000));
+            for (let i = 0; i < count; i++) {
+                stars.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    z: Math.random() * canvas.width,
+                    size: Math.random() * 1.5 + 0.5,
+                    color: `rgba(${180 + Math.random() * 75}, ${200 + Math.random() * 55}, 255, ${Math.random() * 0.7 + 0.3})`
+                });
+            }
+        }
+
+        function updateAndDrawStars() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            for (let i = 0; i < stars.length; i++) {
+                let star = stars[i];
+                star.z -= speedFactor;
+                if (star.z <= 0) {
+                    star.z = canvas.width;
+                    star.x = Math.random() * canvas.width;
+                    star.y = Math.random() * canvas.height;
+                }
+
+                // Cálculo de perspectiva 3D
+                const k = 128.0 / star.z;
+                const px = (star.x - canvas.width / 2) * k + canvas.width / 2;
+                const py = (star.y - canvas.height / 2) * k + canvas.height / 2;
+
+                if (px >= 0 && px <= canvas.width && py >= 0 && py <= canvas.height) {
+                    const size = star.size * (1 - star.z / canvas.width) * 2;
+                    ctx.beginPath();
+                    ctx.arc(px, py, size, 0, Math.PI * 2);
+                    ctx.fillStyle = star.color;
+                    ctx.shadowBlur = size * 3;
+                    ctx.shadowColor = 'rgba(147, 197, 253, 0.5)';
+                    ctx.fill();
+                    ctx.shadowBlur = 0; // reset
+                }
+            }
+            requestAnimationFrame(updateAndDrawStars);
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+        updateAndDrawStars();
+
+        // Ativação por Hover Dinâmico de Partículas que seguem o Mouse
+        window.addEventListener('mousemove', (e) => {
+            const mx = (e.clientX - window.innerWidth / 2) * 0.05;
+            const my = (e.clientY - window.innerHeight / 2) * 0.05;
+            canvas.style.transform = `translate(${mx}px, ${my}px)`;
+
+            const buttons = document.querySelectorAll('.btn-celestial');
+            buttons.forEach(btn => {
+                const rect = btn.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                btn.style.setProperty('--x', `${x}px`);
+                btn.style.setProperty('--y', `${y}px`);
+            });
+        });
+
+        // ================= FLUXO CINEMÁTICO DE ENTRADA =================
+
+        // Fase 1: Clique inicial na tela (Garante permissão de Autoplay de áudio/vídeo local)
+        document.getElementById('interactionScreen').addEventListener('click', () => {
+            playSfx('click');
+            
+            // Tenta reproduzir a trilha sonora do jogo imediatamente
+            bgMusic.volume = 1.0;
+            bgMusic.play().catch(err => console.log("Áudio bloqueado pelo navegador:", err));
+
+            // Acorda e força o play do vídeo em segundo plano (mesmo oculto com opacity 0)
+            bgVideo.play().then(() => {
+                console.log("Vídeo iniciado em background com sucesso!");
+            }).catch(err => {
+                console.log("Aviso de autoplay do vídeo local:", err);
+            });
+
+            // Desaparece com tela de interação
+            const interScreen = document.getElementById('interactionScreen');
+            interScreen.style.opacity = '0';
+            setTimeout(() => interScreen.style.display = 'none', 1000);
+
+            // Inicia Fase 2 (Abertura Estilo Warner Bros)
+            startIntroSequence();
+        });
+
+        // Fase 2: Sequência Cinematográfica de Intro
+        function startIntroSequence() {
+            const introScreen = document.getElementById('introScreen');
+            const introLogoContainer = document.getElementById('introLogoContainer');
+
+            introScreen.style.display = 'flex';
+            
+            // Fade-in da tela preta da intro
+            setTimeout(() => {
+                introScreen.style.opacity = '1';
+            }, 100);
+
+            // Fade-in suave e aproximação do logo do estúdio (Abertura Warner)
+            setTimeout(() => {
+                introLogoContainer.style.opacity = '1';
+                introLogoContainer.style.transform = 'scale(1.05)';
+            }, 1200);
+
+            // Começa Fade-out do logo do estúdio
+            setTimeout(() => {
+                introLogoContainer.style.opacity = '0';
+                introLogoContainer.style.transform = 'scale(1.15)';
+            }, 5500);
+
+            // Fade-out da tela de intro inteira para revelar a interface com o vídeo (mjmj.mp4) já rodando plenamente
+            setTimeout(() => {
+                introScreen.style.opacity = '0';
+                
+                // Ativa a interface principal de menus
+                const mainUI = document.getElementById('mainInterface');
+                mainUI.style.opacity = '1';
+                mainUI.style.pointerEvents = 'auto';
+
+                // GARANTIA MÁXIMA VISUAL: Revela o vídeo com opacidade estável e força reprodução direta
+                bgVideo.style.opacity = '0.9';
+                bgVideo.play().catch(() => {}); 
+            }, 7000);
+
+            // Desativa completamente elemento de intro após sumir
+            setTimeout(() => {
+                introScreen.style.display = 'none';
+            }, 9000);
+        }
+
+        // FAILSAFE ABSOLUTO PARA NAVEGADORES LOCAIS:
+        // Caso o navegador tenha pausado o vídeo devido a restrições do protocolo file:///,
+        // qualquer clique subsequente na tela forçará o vídeo a tentar tocar de novo.
+        document.addEventListener('click', () => {
+            if (bgVideo && bgVideo.paused && document.getElementById('interactionScreen').style.display === 'none') {
+                bgVideo.play().catch(() => {});
+            }
+        });
+
+        // ================= INTERAÇÕES DE CONTROLE DE ÁUDIO =================
+
+        function toggleAudio() {
+            audioMuted = !audioMuted;
+            bgMusic.muted = audioMuted;
+            
+            const icon = document.getElementById('audioIcon');
+            const statusText = document.getElementById('audioStatusText');
+
+            if (audioMuted) {
+                icon.setAttribute('data-lucide', 'music-2');
+                statusText.innerText = "ÁUDIO MUTADO";
+                statusText.classList.add('text-red-400');
+                statusText.classList.remove('text-blue-300');
+            } else {
+                icon.setAttribute('data-lucide', 'music');
+                statusText.innerText = "ÁUDIO ATIVO";
+                statusText.classList.remove('text-red-400');
+                statusText.classList.add('text-blue-300');
+                playSfx('hover');
+            }
+            lucide.createIcons();
+        }
+
+        function updateVolume(val) {
+            const vol = val / 100;
+            bgMusic.volume = vol;
+            document.getElementById('volumeVal').innerText = `${val}%`;
+        }
+
+        // ================= SISTEMA DE MODAIS =================
+
+        function openModal(id) {
+            playSfx('click');
+            const modal = document.getElementById(`modal-${id}`);
+            if (modal) {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            }
+        }
+
+        function closeModal(id) {
+            playSfx('click');
+            const modal = document.getElementById(`modal-${id}`);
+            if (modal) {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }
+        }
+
+        function setQuality(level) {
+            playSfx('click');
+            const btnLow = document.getElementById('btn-q-low');
+            const btnMid = document.getElementById('btn-q-mid');
+            const btnHigh = document.getElementById('btn-q-high');
+            
+            [btnLow, btnMid, btnHigh].forEach(btn => {
+                btn.className = "py-2 rounded bg-white/5 border border-white/10 text-xs hover:bg-white/10";
+            });
+
+            if (level === 'low') {
+                btnLow.className = "py-2 rounded bg-blue-500/20 border border-blue-500/50 text-xs font-bold";
+                bgVideo.style.opacity = '0.3';
+                speedFactor = 0.15;
+            } else if (level === 'mid') {
+                btnMid.className = "py-2 rounded bg-blue-500/20 border border-blue-500/50 text-xs font-bold";
+                bgVideo.style.opacity = '0.6';
+                speedFactor = 0.5;
+            } else {
+                btnHigh.className = "py-2 rounded bg-blue-500/20 border border-blue-500/50 text-xs font-bold";
+                bgVideo.style.opacity = '0.9'; // Força opacidade máxima
+                speedFactor = 1.2;
+            }
+        }
+
+        // ================= EVENTOS DE AÇÃO DO JOGO =================
+
+        // Botão "JOGAR" - Efeito de dobra espacial ultra-imersivo
+        function triggerGameStart() {
+            playSfx('play');
+            
+            // 1. Acelera infinitamente as estrelas para simular velocidade de dobra
+            let warpInterval = setInterval(() => {
+                if (speedFactor < 50) speedFactor += 1.8;
+            }, 30);
+
+            // 2. Transiciona para um flash branco cósmico que encobre toda a tela
+            const flash = document.createElement('div');
+            flash.className = 'fixed inset-0 bg-white opacity-0 z-[100] pointer-events-none transition-opacity duration-1500';
+            document.body.appendChild(flash);
+
+            setTimeout(() => {
+                flash.style.opacity = '1';
+                // Diminui gradativamente a música
+                let fadeInterval = setInterval(() => {
+                    if (bgMusic.volume > 0.05) {
+                        bgMusic.volume -= 0.05;
+                    } else {
+                        bgMusic.volume = 0;
+                        clearInterval(fadeInterval);
+                    }
+                }, 80);
+            }, 1000);
+
+            // 3. Simula início do jogo / transição de carregamento
+            setTimeout(() => {
+                clearInterval(warpInterval);
+                document.body.innerHTML = `
+                    <div class="h-full w-full bg-[#030308] flex flex-col items-center justify-center text-center p-6 space-y-4">
+                        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-400"></div>
+                        <h2 class="title-celestial text-xl tracking-[0.3em] text-blue-200">INICIANDO SIMULAÇÃO</h2>
+                        <p class="text-xs text-slate-500 tracking-widest uppercase">Carregando sistemas estelares...</p>
+                    </div>
+                `;
+            }, 3000);
+        }
+
+        // Botão "SAIR"
+        function exitGame() {
+            playSfx('click');
+            document.body.innerHTML = `
+                <div class="h-full w-full bg-black flex flex-col items-center justify-center text-center p-6 transition-all duration-1000">
+                    <p class="title-celestial text-sm tracking-[0.5em] text-slate-600 uppercase">Sua jornada foi suspensa. Volte sempre, capitão.</p>
+                </div>
+            `;
+        }
+
+        // Atalhos de teclado
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeModal('topGlobal');
+                closeModal('loja');
+                closeModal('opcoes');
+                closeModal('sair');
+            }
+            if (e.key === 'm' || e.key === 'M') {
+                toggleAudio();
+            }
+            if (e.key === 'Enter' || e.key === ' ') {
+                const activeModal = document.querySelector('.fixed:not(.hidden)');
+                if (!activeModal && document.getElementById('mainInterface').style.opacity === '1') {
+                    triggerGameStart();
+                }
+            }
+        });
+    </script>
+</body>
+</html>
