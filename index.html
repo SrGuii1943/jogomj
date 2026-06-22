@@ -57,9 +57,27 @@
         .pulse-glow {
             animation: pulseGlow 4s infinite ease-in-out;
         }
+
+        /* Nebulosa Animada de Fallback (Evita tela preta enquanto o vídeo carrega no servidor) */
+        .nebula-fallback {
+            background: radial-gradient(circle at 20% 30%, rgba(88, 28, 135, 0.25) 0%, transparent 60%),
+                        radial-gradient(circle at 80% 70%, rgba(30, 58, 138, 0.3) 0%, transparent 60%),
+                        radial-gradient(circle at 50% 50%, #04040d 0%, #020205 100%);
+            background-size: 200% 200%;
+            animation: moveNebula 15s ease infinite;
+        }
+
+        @keyframes moveNebula {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
     </style>
 </head>
 <body class="h-full relative flex flex-col items-center justify-center text-white">
+
+    <!-- CAMADA z-[1]: Fundo de Nebulosa Animada por CSS (Sempre ativa por trás para garantir imersão visual) -->
+    <div id="nebulaBg" class="absolute inset-0 z-[1] nebula-fallback"></div>
 
     <!-- CAMADA z-[4]: Canvas de Partículas Estelares (Sutilmente integrado sobrepondo o vídeo de fundo) -->
     <canvas id="starfield" class="absolute inset-0 z-[4] pointer-events-none mix-blend-screen opacity-40"></canvas>
@@ -103,14 +121,18 @@
         };
     </script>
 
-    <!-- CAMADA z-[2]: FUNDO DE VÍDEO PRINCIPAL (mjmj.mp4) - Posicionado explicitamente para renderizar acima do body e em loop infinito -->
-    <video id="bgVideo" loop muted playsinline autoplay preload="auto" style="opacity: 0; position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover;"
+    <!-- CAMADA z-[2]: FUNDO DE VÍDEO PRINCIPAL (mjmj.mp4) - Otimizado e com múltiplos fallbacks de caminhos caso o GitHub falhe -->
+    <video id="bgVideo" loop muted playsinline autoplay preload="auto"
+           style="opacity: 0; position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover;"
            class="absolute inset-0 z-[2] pointer-events-none transition-opacity duration-[3000ms] ease-in-out">
-        <source src="mjmj.mp4" type="video/mp4">
+        <!-- Tentativa 1: Caminho Relativo Padrão -->
+        <source id="videoSource1" src="mjmj.mp4" type="video/mp4">
+        <!-- Tentativa 2: Caminho Absoluto Local Alternativo -->
+        <source id="videoSource2" src="./mjmj.mp4" type="video/mp4">
     </video>
 
     <!-- CAMADA z-[3]: Overlay de Escurecimento Sutil (Garante contraste ideal para leitura dos botões) -->
-    <div class="absolute inset-0 bg-[#020205]/40 z-[3] pointer-events-none"></div>
+    <div class="absolute inset-0 bg-[#020205]/45 z-[3] pointer-events-none"></div>
 
     <!-- ================= FASE 1: TELA DE DESPERTAR (Resolução de Autoplay) ================= -->
     <div id="interactionScreen" class="absolute inset-0 z-50 bg-[#020205] flex flex-col items-center justify-center cursor-pointer transition-all duration-1000">
@@ -461,22 +483,55 @@
             });
         });
 
+        // ================= SISTEMA DINÂMICO DE TENTATIVAS DE VÍDEO (Failsafe) =================
+        // Lista de caminhos alternativos para lidar com case-sensitivity no GitHub Pages e caminhos locais
+        const pathsToTry = [
+            "mjmj.mp4",
+            "./mjmj.mp4",
+            "MJMJ.mp4",
+            "MJMJ.MP4",
+            "mjmj.MP4"
+        ];
+        let currentPathIndex = 0;
+
+        bgVideo.addEventListener('error', (e) => {
+            const err = bgVideo.error;
+            let errorMsg = "Erro desconhecido";
+            if (err) {
+                switch(err.code) {
+                    case 1: errorMsg = "Reprodução abortada"; break;
+                    case 2: errorMsg = "Erro de rede ao baixar o vídeo"; break;
+                    case 3: errorMsg = "Erro de decodificação (Problema de codec no navegador)"; break;
+                    case 4: errorMsg = "Vídeo não suportado ou arquivo não encontrado (404)"; break;
+                }
+                console.warn(`[Vídeo Tentativa ${currentPathIndex + 1}] Falha no caminho "${pathsToTry[currentPathIndex]}": ${errorMsg} (Código: ${err.code})`);
+            }
+
+            // Se ainda houver caminhos alternativos para tentar, muda o src
+            currentPathIndex++;
+            if (currentPathIndex < pathsToTry.length) {
+                console.log(`[Failsafe] Tentando caminho alternativo: ${pathsToTry[currentPathIndex]}`);
+                bgVideo.src = pathsToTry[currentPathIndex];
+                bgVideo.load();
+                bgVideo.play().catch(() => {});
+            } else {
+                console.error("Não foi possível carregar o vídeo através de nenhum caminho alternativo. Mantendo fundo de nebulosa espacial animada ativo para manter imersão.");
+            }
+        });
+
         // ================= FLUXO CINEMÁTICO DE ENTRADA =================
 
-        // Fase 1: Clique inicial na tela (Garante permissão de Autoplay de áudio/vídeo local)
+        // Fase 1: Clique inicial na tela (Garante permissão de Autoplay de áudio/vídeo)
         document.getElementById('interactionScreen').addEventListener('click', () => {
             playSfx('click');
             
-            // Tenta reproduzir a trilha sonora do jogo imediatamente
+            // Ativa o áudio da música de fundo
             bgMusic.volume = 1.0;
-            bgMusic.play().catch(err => console.log("Áudio bloqueado pelo navegador:", err));
+            bgMusic.play().catch(err => console.log("Áudio bloqueado:", err));
 
-            // Acorda e força o play do vídeo em segundo plano (mesmo oculto com opacity 0)
-            bgVideo.play().then(() => {
-                console.log("Vídeo iniciado em background com sucesso!");
-            }).catch(err => {
-                console.log("Aviso de autoplay do vídeo local:", err);
-            });
+            // Força o vídeo a iniciar a reprodução em background para ir preenchendo o buffer de rede
+            bgVideo.muted = true;
+            bgVideo.play().catch(err => console.log("Vídeo bloqueado pelo navegador:", err));
 
             // Desaparece com tela de interação
             const interScreen = document.getElementById('interactionScreen');
@@ -511,7 +566,7 @@
                 introLogoContainer.style.transform = 'scale(1.15)';
             }, 5500);
 
-            // Fade-out da tela de intro inteira para revelar a interface com o vídeo (mjmj.mp4) já rodando plenamente
+            // Fade-out da tela de intro para revelar a interface com o vídeo
             setTimeout(() => {
                 introScreen.style.opacity = '0';
                 
@@ -520,9 +575,12 @@
                 mainUI.style.opacity = '1';
                 mainUI.style.pointerEvents = 'auto';
 
-                // GARANTIA MÁXIMA VISUAL: Revela o vídeo com opacidade estável e força reprodução direta
-                bgVideo.style.opacity = '0.9';
-                bgVideo.play().catch(() => {}); 
+                // REVELAÇÃO DO VÍDEO: Aplica opacidade para o vídeo se misturar ao fundo de nebulosas
+                bgVideo.style.opacity = '0.85';
+                
+                // Força o play novamente em caso de pausa por restrição de rede ou cache
+                bgVideo.muted = true;
+                bgVideo.play().catch(() => {});
             }, 7000);
 
             // Desativa completamente elemento de intro após sumir
@@ -531,11 +589,11 @@
             }, 9000);
         }
 
-        // FAILSAFE ABSOLUTO PARA NAVEGADORES LOCAIS:
-        // Caso o navegador tenha pausado o vídeo devido a restrições do protocolo file:///,
-        // qualquer clique subsequente na tela forçará o vídeo a tentar tocar de novo.
+        // FAILSAFE PARA NAVEGADORES LOCAIS E DISPOSITIVOS MÓVEIS:
+        // Qualquer clique subsequente na tela garante que o vídeo continue a rodar caso o browser pause
         document.addEventListener('click', () => {
             if (bgVideo && bgVideo.paused && document.getElementById('interactionScreen').style.display === 'none') {
+                bgVideo.muted = true;
                 bgVideo.play().catch(() => {});
             }
         });
@@ -610,7 +668,7 @@
                 speedFactor = 0.5;
             } else {
                 btnHigh.className = "py-2 rounded bg-blue-500/20 border border-blue-500/50 text-xs font-bold";
-                bgVideo.style.opacity = '0.9'; // Força opacidade máxima
+                bgVideo.style.opacity = '0.85';
                 speedFactor = 1.2;
             }
         }
