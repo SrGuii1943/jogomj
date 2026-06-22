@@ -9,7 +9,7 @@
     <!-- Google Fonts: Cinzel (Celestial) e Space Grotesk (Tech) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2 family=Cinzel:wght@400;600;700;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
@@ -269,6 +269,40 @@
 
     <!-- ================= LÓGICAS E SISTEMAS DE FÍSICA ================= -->
     <script>
+        // Efeitos Sonoros Dinâmicos (Web Audio API) - Escopo Global
+        const playSfx = (type) => {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                
+                if (type === 'hover') {
+                    osc.frequency.setValueAtTime(180, ctx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(280, ctx.currentTime + 0.15);
+                    gain.gain.setValueAtTime(0.01, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+                    osc.start();
+                    osc.stop(ctx.currentTime + 0.15);
+                } else if (type === 'click') {
+                    osc.frequency.setValueAtTime(150, ctx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(450, ctx.currentTime + 0.3);
+                    gain.gain.setValueAtTime(0.05, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+                    osc.start();
+                    osc.stop(ctx.currentTime + 0.3);
+                } else if (type === 'play') {
+                    osc.frequency.setValueAtTime(100, ctx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 1.5);
+                    gain.gain.setValueAtTime(0.08, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.5);
+                    osc.start();
+                    osc.stop(ctx.currentTime + 1.5);
+                }
+            } catch (e) { /* Fallback silencioso */ }
+        };
+
         // Inicialização de Variáveis Globais
         const canvas = document.getElementById('cosmicCanvas');
         const ctx = canvas.getContext('2d');
@@ -535,6 +569,7 @@
             initParticles();
         }
 
+        // Change mouse gravity radius
         function changeRadius(val) {
             mouse.radius = parseInt(val);
             document.getElementById('gravityRadiusVal').innerText = `${val}px`;
@@ -548,6 +583,7 @@
             m.classList.add('flex');
         }
 
+        // Close modais
         function closeModal(id) {
             playSfx('click');
             const m = document.getElementById(`modal-${id}`);
