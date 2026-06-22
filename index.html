@@ -121,18 +121,14 @@
         };
     </script>
 
-    <!-- CAMADA z-[2]: FUNDO DE VÍDEO PRINCIPAL (mjmj.mp4) - Otimizado e com múltiplos fallbacks de caminhos caso o GitHub falhe -->
-    <video id="bgVideo" loop muted playsinline autoplay preload="auto"
+    <!-- CAMADA z-[2]: FUNDO DE VÍDEO PRINCIPAL (mjmj.mp4) - Caminho absoluto direto e limpo para evitar erros de cache -->
+    <video id="bgVideo" src="mjmj.mp4" loop muted playsinline autoplay preload="auto"
            style="opacity: 0; position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover;"
-           class="absolute inset-0 z-[2] pointer-events-none transition-opacity duration-[3000ms] ease-in-out">
-        <!-- Tentativa 1: Caminho Relativo Padrão -->
-        <source id="videoSource1" src="mjmj.mp4" type="video/mp4">
-        <!-- Tentativa 2: Caminho Absoluto Local Alternativo -->
-        <source id="videoSource2" src="./mjmj.mp4" type="video/mp4">
+           class="absolute inset-0 z-[2] pointer-events-none transition-opacity duration-[2000ms] ease-in-out">
     </video>
 
-    <!-- CAMADA z-[3]: Overlay de Escurecimento Sutil (Garante contraste ideal para leitura dos botões) -->
-    <div class="absolute inset-0 bg-[#020205]/45 z-[3] pointer-events-none"></div>
+    <!-- CAMADA z-[3]: Overlay de Escurecimento Sutil (Reduzido para 25% para deixar o seu vídeo muito mais brilhante e nítido) -->
+    <div class="absolute inset-0 bg-black/25 z-[3] pointer-events-none"></div>
 
     <!-- ================= FASE 1: TELA DE DESPERTAR (Resolução de Autoplay) ================= -->
     <div id="interactionScreen" class="absolute inset-0 z-50 bg-[#020205] flex flex-col items-center justify-center cursor-pointer transition-all duration-1000">
@@ -483,40 +479,9 @@
             });
         });
 
-        // ================= SISTEMA DINÂMICO DE TENTATIVAS DE VÍDEO (Failsafe) =================
-        // Lista de caminhos alternativos para lidar com case-sensitivity no GitHub Pages e caminhos locais
-        const pathsToTry = [
-            "mjmj.mp4",
-            "./mjmj.mp4",
-            "MJMJ.mp4",
-            "MJMJ.MP4",
-            "mjmj.MP4"
-        ];
-        let currentPathIndex = 0;
-
-        bgVideo.addEventListener('error', (e) => {
-            const err = bgVideo.error;
-            let errorMsg = "Erro desconhecido";
-            if (err) {
-                switch(err.code) {
-                    case 1: errorMsg = "Reprodução abortada"; break;
-                    case 2: errorMsg = "Erro de rede ao baixar o vídeo"; break;
-                    case 3: errorMsg = "Erro de decodificação (Problema de codec no navegador)"; break;
-                    case 4: errorMsg = "Vídeo não suportado ou arquivo não encontrado (404)"; break;
-                }
-                console.warn(`[Vídeo Tentativa ${currentPathIndex + 1}] Falha no caminho "${pathsToTry[currentPathIndex]}": ${errorMsg} (Código: ${err.code})`);
-            }
-
-            // Se ainda houver caminhos alternativos para tentar, muda o src
-            currentPathIndex++;
-            if (currentPathIndex < pathsToTry.length) {
-                console.log(`[Failsafe] Tentando caminho alternativo: ${pathsToTry[currentPathIndex]}`);
-                bgVideo.src = pathsToTry[currentPathIndex];
-                bgVideo.load();
-                bgVideo.play().catch(() => {});
-            } else {
-                console.error("Não foi possível carregar o vídeo através de nenhum caminho alternativo. Mantendo fundo de nebulosa espacial animada ativo para manter imersão.");
-            }
+        // Eventos básicos de monitoramento do vídeo sem forçar alteração de rotas falsas
+        bgVideo.addEventListener('playing', () => {
+            console.log("Sucesso: O vídeo de fundo 'mjmj.mp4' começou a ser reproduzido.");
         });
 
         // ================= FLUXO CINEMÁTICO DE ENTRADA =================
@@ -527,11 +492,13 @@
             
             // Ativa o áudio da música de fundo
             bgMusic.volume = 1.0;
-            bgMusic.play().catch(err => console.log("Áudio bloqueado:", err));
+            bgMusic.play().catch(err => console.log("Áudio de música bloqueado temporariamente:", err));
 
-            // Força o vídeo a iniciar a reprodução em background para ir preenchendo o buffer de rede
+            // Acorda o vídeo de fundo imediatamente em segundo plano
             bgVideo.muted = true;
-            bgVideo.play().catch(err => console.log("Vídeo bloqueado pelo navegador:", err));
+            bgVideo.play().then(() => {
+                console.log("Vídeo acordado com sucesso.");
+            }).catch(err => console.log("Vídeo aguardando buffer:", err));
 
             // Desaparece com tela de interação
             const interScreen = document.getElementById('interactionScreen');
@@ -568,29 +535,24 @@
 
             // Fade-out da tela de intro para revelar a interface com o vídeo
             setTimeout(() => {
-                introScreen.style.opacity = '0';
+                // Esconde instantaneamente e remove do layout a intro preta para evitar qualquer bloqueio
+                introScreen.style.display = 'none';
                 
                 // Ativa a interface principal de menus
                 const mainUI = document.getElementById('mainInterface');
                 mainUI.style.opacity = '1';
                 mainUI.style.pointerEvents = 'auto';
 
-                // REVELAÇÃO DO VÍDEO: Aplica opacidade para o vídeo se misturar ao fundo de nebulosas
-                bgVideo.style.opacity = '0.85';
+                // REVELAÇÃO DO VÍDEO: Altera a opacidade para que o vídeo (mjmj.mp4) surja majestosamente
+                bgVideo.style.opacity = '0.95';
                 
-                // Força o play novamente em caso de pausa por restrição de rede ou cache
+                // Força o vídeo a rodar novamente em caso de suspensão de buffer
                 bgVideo.muted = true;
                 bgVideo.play().catch(() => {});
             }, 7000);
-
-            // Desativa completamente elemento de intro após sumir
-            setTimeout(() => {
-                introScreen.style.display = 'none';
-            }, 9000);
         }
 
-        // FAILSAFE PARA NAVEGADORES LOCAIS E DISPOSITIVOS MÓVEIS:
-        // Qualquer clique subsequente na tela garante que o vídeo continue a rodar caso o browser pause
+        // FAILSAFE IMEDIATO: Qualquer clique na tela força a reprodução caso o browser pause o vídeo silenciosamente
         document.addEventListener('click', () => {
             if (bgVideo && bgVideo.paused && document.getElementById('interactionScreen').style.display === 'none') {
                 bgVideo.muted = true;
@@ -668,7 +630,7 @@
                 speedFactor = 0.5;
             } else {
                 btnHigh.className = "py-2 rounded bg-blue-500/20 border border-blue-500/50 text-xs font-bold";
-                bgVideo.style.opacity = '0.85';
+                bgVideo.style.opacity = '0.95';
                 speedFactor = 1.2;
             }
         }
