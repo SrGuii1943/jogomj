@@ -21,255 +21,136 @@
         }
         .title-celestial {
             font-family: 'Cinzel', serif;
-            text-shadow: 0 0 20px rgba(147, 197, 253, 0.3), 0 0 40px rgba(147, 197, 253, 0.1);
+            text-shadow: 0 0 25px rgba(147, 197, 253, 0.4), 0 0 50px rgba(147, 197, 253, 0.15);
         }
         /* Efeito de vidro galáctico */
         .glass-panel {
-            background: rgba(10, 10, 25, 0.5);
+            background: rgba(8, 8, 20, 0.65);
             border: 1px solid rgba(255, 255, 255, 0.08);
-            backdrop-filter: blur(12px);
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            backdrop-filter: blur(16px);
+            box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.5);
         }
         /* Estilo premium para botões */
         .btn-celestial {
             position: relative;
-            background: rgba(255, 255, 255, 0.02);
+            background: rgba(255, 255, 255, 0.03);
             border: 1px solid rgba(255, 255, 255, 0.08);
             transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
         }
         .btn-celestial:hover {
-            border-color: rgba(147, 197, 253, 0.5);
-            box-shadow: 0 0 20px rgba(147, 197, 253, 0.15);
+            border-color: rgba(147, 197, 253, 0.6);
+            box-shadow: 0 0 25px rgba(147, 197, 253, 0.2);
             transform: translateY(-2px);
-            background: rgba(255, 255, 255, 0.05);
+            background: rgba(255, 255, 255, 0.06);
         }
         /* Animação de pulsar do player */
         @keyframes orbitPulse {
-            0%, 100% { box-shadow: 0 0 15px rgba(59, 130, 246, 0.1); }
-            50% { box-shadow: 0 0 30px rgba(147, 51, 234, 0.25); }
+            0%, 100% { box-shadow: 0 0 15px rgba(59, 130, 246, 0.15); }
+            50% { box-shadow: 0 0 35px rgba(147, 51, 234, 0.35); }
         }
         .active-player {
             animation: orbitPulse 4s infinite ease-in-out;
-            border-color: rgba(147, 51, 234, 0.3);
+            border-color: rgba(147, 51, 234, 0.4);
+        }
+        /* Fade-out para transição suave de elementos de interface */
+        .fade-transition {
+            transition: opacity 0.8s cubic-bezier(0.25, 1, 0.5, 1), transform 0.8s cubic-bezier(0.25, 1, 0.5, 1);
         }
     </style>
 </head>
 <body class="h-full relative flex flex-col items-center justify-center text-white">
 
-    <!-- CANVAS INTERATIVO DE PARTÍCULAS (Ocupa o fundo de tela inteiro) -->
+    <!-- CANVAS DE FLUIDOS E PARTÍCULAS NEON -->
     <canvas id="cosmicCanvas" class="absolute inset-0 z-0 bg-[#020205]"></canvas>
 
-    <!-- Overlay gradiente suave para profundidade visual -->
-    <div class="absolute inset-0 bg-gradient-to-t from-[#020205] via-transparent to-[#020205]/80 z-[1] pointer-events-none"></div>
+    <!-- Overlay de vinheta para realçar o brilho das luzes no centro -->
+    <div class="absolute inset-0 bg-radial-gradient from-transparent via-[#020205]/40 to-[#020205] z-[1] pointer-events-none"></div>
 
-    <!-- AUDIO ELEMENT ÚNICO -->
+    <!-- ELEMENTO DE ÁUDIO -->
     <audio id="musicPlayer" loop></audio>
 
-    <!-- INTERFACE PRINCIPAL -->
+    <!-- INTERFACE DO USUÁRIO (Tudo envelopado para controle de fade/visibilidade) -->
     <div class="relative z-10 w-full h-full flex flex-col justify-between p-6 md:p-12 pointer-events-none select-none">
         
-        <!-- Topo da Interface: Info e Status das Partículas -->
-        <header class="w-full flex justify-between items-center text-xs tracking-[0.2em] text-slate-300 font-light">
+        <!-- TOPO: Indicador de status dinâmico -->
+        <header id="uiHeader" class="w-full flex justify-between items-center text-xs tracking-[0.2em] text-slate-300 font-light transition-opacity duration-1000">
             <div class="flex items-center gap-2 bg-black/40 px-4 py-2 rounded-full border border-white/5 backdrop-blur-sm pointer-events-auto">
                 <span id="statusIndicator" class="h-2 w-2 rounded-full bg-red-500 animate-pulse"></span>
-                <span id="statusText">PARTÍCULAS: DORMINTES (SEM MÚSICA)</span>
+                <span id="statusText">SINFONIA INATIVA (SELECIONE UMA MÚSICA)</span>
             </div>
             <div class="hidden md:flex items-center gap-2 bg-black/40 px-4 py-2 rounded-full border border-white/5 backdrop-blur-sm">
-                <i data-lucide="mouse-pointer" class="w-3.5 h-3.5 text-blue-400"></i>
-                <span>MOVA O MOUSE PARA DESENHAR NO COSMOS</span>
+                <i data-lucide="sparkles" class="w-3.5 h-3.5 text-blue-400"></i>
+                <span id="instructionText">ESCOLHA UMA TRILHA PARA ATIVAR O FLUIDO NEON</span>
             </div>
         </header>
 
-        <!-- Centro: Título do Jogo e Seleção de Músicas -->
+        <!-- CENTRO: Título e Player Holográfico -->
         <main class="flex flex-col items-center justify-center flex-grow py-6 text-center space-y-8">
             
-            <!-- Bloco de Título -->
-            <div class="space-y-3">
-                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-400/20 text-blue-300 text-[10px] tracking-[0.3em] uppercase backdrop-blur-sm">
-                    <i data-lucide="sparkles" class="w-3 h-3"></i> EXPEDIÇÃO SONORA INTERATIVA
+            <!-- Título Principal (Oculta ao iniciar música) -->
+            <div id="uiTitle" class="space-y-3 fade-transition">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/10 border border-purple-400/20 text-purple-300 text-[10px] tracking-[0.3em] uppercase backdrop-blur-sm">
+                    <i data-lucide="waves" class="w-3.5 h-3.5"></i> Espectro de Fluidos Interativos
                 </div>
-                <h1 class="title-celestial text-5xl md:text-7xl tracking-[0.25em] font-extrabold uppercase text-transparent bg-clip-text bg-gradient-to-b from-white via-slate-100 to-blue-200 drop-shadow-md">
-                    COSMIC<br><span class="text-3xl md:text-5xl font-light tracking-[0.4em] text-blue-100">ODYSSEY</span>
+                <h1 class="title-celestial text-5xl md:text-7xl tracking-[0.25em] font-extrabold uppercase text-transparent bg-clip-text bg-gradient-to-b from-white via-slate-100 to-purple-200 drop-shadow-md">
+                    COSMIC<br><span class="text-3xl md:text-5xl font-light tracking-[0.4em] text-purple-300">SOUNDWAVE</span>
                 </h1>
             </div>
 
-            <!-- PLAYER HOLOGRÁFICO DE MÚSICA -->
-            <div id="playerCard" class="glass-panel p-6 rounded-2xl w-full max-w-lg pointer-events-auto transition-all duration-500">
-                <div class="flex flex-col space-y-4">
+            <!-- CARD DO PLAYER (Oculta ao iniciar música) -->
+            <div id="playerCard" class="glass-panel p-6 rounded-2xl w-full max-w-lg pointer-events-auto fade-transition">
+                <div class="flex flex-col space-y-5">
                     <div class="flex items-center justify-between border-b border-white/10 pb-3">
                         <div class="flex items-center gap-2">
-                            <i data-lucide="disc" id="discIcon" class="w-5 h-5 text-purple-400"></i>
-                            <span class="text-xs tracking-[0.2em] font-bold text-slate-300 uppercase">Sintonizador de Ondas</span>
+                            <i data-lucide="music-4" id="discIcon" class="w-5 h-5 text-purple-400"></i>
+                            <span class="text-xs tracking-[0.2em] font-bold text-slate-300 uppercase">Sintonizador Sonoro</span>
                         </div>
-                        <span id="nowPlayingText" class="text-[10px] text-blue-300 tracking-wider">NENHUMA FAIXA ATIVA</span>
+                        <span id="nowPlayingText" class="text-[10px] text-purple-300 tracking-wider font-bold">NENHUMA FAIXA ATIVA</span>
                     </div>
 
-                    <!-- Grid de Músicas -->
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        <button onclick="selectTrack('beatmj.mp3', 'Beat It - MJ', 'btn-beat')" id="btn-beat" class="btn-celestial py-2.5 px-4 rounded-lg text-xs tracking-wider font-medium text-left flex items-center justify-between hover:text-white text-slate-400">
+                    <!-- Lista Completa das 4 Faixas -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                        <button onclick="selectTrack('beatmj.mp3', 'Beat It - MJ', 'btn-beat')" id="btn-beat" class="btn-celestial py-3 px-4 rounded-xl text-xs tracking-wider font-medium text-left flex items-center justify-between hover:text-white text-slate-400">
                             <span class="truncate">1. Beat It</span>
-                            <i data-lucide="play-circle" class="w-4 h-4 text-slate-500 hover-target"></i>
+                            <i data-lucide="play" class="w-3.5 h-3.5 text-slate-500"></i>
                         </button>
-                        <button onclick="selectTrack('billiemj.mp3', 'Billie Jean - MJ', 'btn-billie')" id="btn-billie" class="btn-celestial py-2.5 px-4 rounded-lg text-xs tracking-wider font-medium text-left flex items-center justify-between hover:text-white text-slate-400">
+                        <button onclick="selectTrack('billiemj.mp3', 'Billie Jean - MJ', 'btn-billie')" id="btn-billie" class="btn-celestial py-3 px-4 rounded-xl text-xs tracking-wider font-medium text-left flex items-center justify-between hover:text-white text-slate-400">
                             <span class="truncate">2. Billie Jean</span>
-                            <i data-lucide="play-circle" class="w-4 h-4 text-slate-500 hover-target"></i>
+                            <i data-lucide="play" class="w-3.5 h-3.5 text-slate-500"></i>
                         </button>
-                        <button onclick="selectTrack('badmj.mp3', 'Bad - MJ', 'btn-bad')" id="btn-bad" class="btn-celestial py-2.5 px-4 rounded-lg text-xs tracking-wider font-medium text-left flex items-center justify-between hover:text-white text-slate-400">
+                        <button onclick="selectTrack('badmj.mp3', 'Bad - MJ', 'btn-bad')" id="btn-bad" class="btn-celestial py-3 px-4 rounded-xl text-xs tracking-wider font-medium text-left flex items-center justify-between hover:text-white text-slate-400">
                             <span class="truncate">3. Bad</span>
-                            <i data-lucide="play-circle" class="w-4 h-4 text-slate-500 hover-target"></i>
+                            <i data-lucide="play" class="w-3.5 h-3.5 text-slate-500"></i>
                         </button>
-                        <button onclick="selectTrack('olodummj.mp3', 'They Dont Care (Olodum)', 'btn-olodum')" id="btn-olodum" class="btn-celestial py-2.5 px-4 rounded-lg text-xs tracking-wider font-medium text-left flex items-center justify-between hover:text-white text-slate-400">
+                        <button onclick="selectTrack('olodummj.mp3', 'They Don\'t Care (Olodum)', 'btn-olodum')" id="btn-olodum" class="btn-celestial py-3 px-4 rounded-xl text-xs tracking-wider font-medium text-left flex items-center justify-between hover:text-white text-slate-400">
                             <span class="truncate">4. Olodum Mix</span>
-                            <i data-lucide="play-circle" class="w-4 h-4 text-slate-500 hover-target"></i>
+                            <i data-lucide="play" class="w-3.5 h-3.5 text-slate-500"></i>
                         </button>
                     </div>
 
-                    <!-- Controles Rápidos do Player -->
-                    <div class="flex items-center justify-between pt-2">
-                        <button onclick="pauseMusic()" class="px-4 py-2 bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 text-red-400 rounded-lg text-[10px] tracking-widest font-bold uppercase transition-all">
-                            Pausar Transmissão
-                        </button>
-                        <div class="flex items-center gap-2">
-                            <i data-lucide="volume-2" class="w-4 h-4 text-slate-400"></i>
-                            <input type="range" min="0" max="100" value="80" oninput="setVolume(this.value)" class="w-20 accent-blue-500 bg-white/10 h-1 rounded cursor-pointer">
-                        </div>
+                    <!-- Controle de Volume Integrado -->
+                    <div class="flex items-center justify-end gap-3 pt-1">
+                        <i data-lucide="volume-2" class="w-4 h-4 text-slate-400"></i>
+                        <input type="range" min="0" max="100" value="80" oninput="setVolume(this.value)" class="w-24 accent-purple-500 bg-white/10 h-1.5 rounded-lg cursor-pointer">
                     </div>
                 </div>
             </div>
 
-            <!-- Botão de Iniciar Jogo -->
-            <div class="pointer-events-auto">
-                <button onclick="startGame()" class="btn-celestial px-12 py-4 rounded-full text-sm font-bold tracking-[0.3em] uppercase text-blue-200 border border-blue-400/20 hover:border-blue-400 shadow-[0_0_30px_rgba(59,130,246,0.15)] flex items-center gap-2 group">
-                    JOGAR <i data-lucide="chevron-right" class="w-4 h-4 transition-transform group-hover:translate-x-1"></i>
+            <!-- BOTÃO UNICO: PARAR MÚSICA (Fica visível APENAS quando a música está rolando) -->
+            <div id="stopButtonContainer" class="pointer-events-auto fade-transition opacity-0 scale-90 hidden">
+                <button onclick="pauseMusic()" class="relative px-10 py-4 bg-red-600/15 border border-red-500/40 hover:bg-red-600/30 text-red-300 rounded-full text-xs font-bold uppercase tracking-[0.3em] transition-all hover:scale-105 active:scale-95 shadow-[0_0_30px_rgba(239,68,68,0.2)] flex items-center gap-2.5">
+                    <i data-lucide="square" class="w-4 h-4 fill-current"></i> PARAR TRILHA CÓSMICA
                 </button>
             </div>
         </main>
-
-        <!-- Base: Menu de Botões Interestelares -->
-        <footer class="w-full max-w-4xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-4 pb-4 pointer-events-auto">
-            <button onclick="openModal('topGlobal')" class="btn-celestial py-3 px-6 rounded-lg text-xs tracking-[0.2em] font-medium uppercase text-slate-300 hover:text-white flex items-center justify-center gap-2">
-                <i data-lucide="trophy" class="w-4 h-4 text-amber-400/80"></i> Top Global
-            </button>
-            <button onclick="openModal('loja')" class="btn-celestial py-3 px-6 rounded-lg text-xs tracking-[0.2em] font-medium uppercase text-slate-300 hover:text-white flex items-center justify-center gap-2">
-                <i data-lucide="shopping-bag" class="w-4 h-4 text-emerald-400/80"></i> Loja
-            </button>
-            <button onclick="openModal('opcoes')" class="btn-celestial py-3 px-6 rounded-lg text-xs tracking-[0.2em] font-medium uppercase text-slate-300 hover:text-white flex items-center justify-center gap-2">
-                <i data-lucide="sliders" class="w-4 h-4 text-blue-400/80"></i> Opções
-            </button>
-            <button onclick="openModal('sair')" class="btn-celestial py-3 px-6 rounded-lg text-xs tracking-[0.2em] font-medium uppercase text-slate-300 hover:text-red-400">
-                <i data-lucide="log-out" class="w-4 h-4 text-red-500/80"></i> Sair
-            </button>
-        </footer>
     </div>
 
-    <!-- ================= MODAIS DE NAVEGAÇÃO INTERATIVOS ================= -->
-
-    <!-- Modal: TOP GLOBAL -->
-    <div id="modal-topGlobal" class="fixed inset-0 z-50 bg-[#020205]/95 backdrop-blur-md hidden items-center justify-center p-4 pointer-events-auto">
-        <div class="bg-gradient-to-b from-[#0a0a1a] to-[#04040d] border border-blue-500/20 max-w-xl w-full rounded-2xl p-6 md:p-8 space-y-6 relative">
-            <button onclick="closeModal('topGlobal')" class="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors">
-                <i data-lucide="x" class="w-6 h-6"></i>
-            </button>
-            <div class="text-center space-y-2">
-                <i data-lucide="trophy" class="w-12 h-12 text-amber-400 mx-auto"></i>
-                <h3 class="title-celestial text-2xl font-bold tracking-[0.2em] text-blue-200">LÍDERES INTERGALÁCTICOS</h3>
-                <p class="text-[10px] text-slate-400 tracking-[0.2em] uppercase">Os maiores exploradores do cosmos</p>
-            </div>
-            
-            <div class="space-y-3 max-h-72 overflow-y-auto pr-2">
-                <div class="flex items-center justify-between p-3 rounded-lg bg-amber-500/5 border border-amber-500/20">
-                    <div class="flex items-center gap-3">
-                        <span class="font-bold text-amber-400 text-lg">#1</span>
-                        <span class="font-medium tracking-wide">AstroExplorer_X</span>
-                    </div>
-                    <span class="font-mono text-xs text-amber-200">1,245,900 pts</span>
-                </div>
-                <div class="flex items-center justify-between p-3 rounded-lg bg-slate-500/5 border border-slate-500/10">
-                    <div class="flex items-center gap-3">
-                        <span class="font-bold text-slate-300 text-lg">#2</span>
-                        <span class="font-medium tracking-wide">OrionPilot_88</span>
-                    </div>
-                    <span class="font-mono text-xs text-slate-300">985,400 pts</span>
-                </div>
-                <div class="flex items-center justify-between p-3 rounded-lg bg-amber-700/5 border border-amber-700/10">
-                    <div class="flex items-center gap-3">
-                        <span class="font-bold text-amber-600 text-lg">#3</span>
-                        <span class="font-medium tracking-wide">NebulaLord</span>
-                    </div>
-                    <span class="font-mono text-xs text-amber-600">842,100 pts</span>
-                </div>
-            </div>
-            <button onclick="closeModal('topGlobal')" class="w-full py-3 bg-blue-600 hover:bg-blue-500 transition-colors rounded-lg font-bold text-xs uppercase tracking-[0.2em]">FECHAR</button>
-        </div>
-    </div>
-
-    <!-- Modal: LOJA -->
-    <div id="modal-loja" class="fixed inset-0 z-50 bg-[#020205]/95 backdrop-blur-md hidden items-center justify-center p-4 pointer-events-auto">
-        <div class="bg-gradient-to-b from-[#0a0a1a] to-[#04040d] border border-blue-500/20 max-w-xl w-full rounded-2xl p-6 md:p-8 space-y-6 relative">
-            <button onclick="closeModal('loja')" class="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors">
-                <i data-lucide="x" class="w-6 h-6"></i>
-            </button>
-            <div class="text-center space-y-2">
-                <i data-lucide="shopping-bag" class="w-12 h-12 text-emerald-400 mx-auto"></i>
-                <h3 class="title-celestial text-2xl font-bold tracking-[0.2em] text-blue-200">LOJA CELESTIAL</h3>
-                <p class="text-[10px] text-slate-400 tracking-[0.2em] uppercase">Adquira novos canais cósmicos</p>
-            </div>
-            <div class="p-8 text-center text-slate-400 text-sm italic">
-                Nenhum item disponível nesta galáxia no momento.
-            </div>
-            <button onclick="closeModal('loja')" class="w-full py-3 bg-blue-600 hover:bg-blue-500 transition-colors rounded-lg font-bold text-xs uppercase tracking-[0.2em]">VOLTAR</button>
-        </div>
-    </div>
-
-    <!-- Modal: OPÇÕES -->
-    <div id="modal-opcoes" class="fixed inset-0 z-50 bg-[#020205]/95 backdrop-blur-md hidden items-center justify-center p-4 pointer-events-auto">
-        <div class="bg-gradient-to-b from-[#0a0a1a] to-[#04040d] border border-blue-500/20 max-w-xl w-full rounded-2xl p-6 md:p-8 space-y-6 relative">
-            <button onclick="closeModal('opcoes')" class="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors">
-                <i data-lucide="x" class="w-6 h-6"></i>
-            </button>
-            <div class="text-center space-y-2">
-                <i data-lucide="sliders" class="w-12 h-12 text-blue-400 mx-auto"></i>
-                <h3 class="title-celestial text-2xl font-bold tracking-[0.2em] text-blue-200">CENTRAL DE OPÇÕES</h3>
-                <p class="text-[10px] text-slate-400 tracking-[0.2em] uppercase">Ajustes do Simulador de Física</p>
-            </div>
-            
-            <div class="space-y-4">
-                <div class="space-y-2">
-                    <div class="flex justify-between text-xs tracking-wider">
-                        <span class="text-slate-300">Densidade de Partículas</span>
-                        <span id="particleDensityVal" class="text-blue-300 font-mono">1000</span>
-                    </div>
-                    <input type="range" id="densitySlider" min="200" max="1500" value="1000" oninput="changeDensity(this.value)"
-                           class="w-full accent-blue-500 bg-white/10 h-1.5 rounded-lg appearance-none cursor-pointer">
-                </div>
-                <div class="space-y-2">
-                    <div class="flex justify-between text-xs tracking-wider">
-                        <span class="text-slate-300">Raio de Gravidade do Mouse</span>
-                        <span id="gravityRadiusVal" class="text-blue-300 font-mono">120px</span>
-                    </div>
-                    <input type="range" id="radiusSlider" min="50" max="250" value="120" oninput="changeRadius(this.value)"
-                           class="w-full accent-blue-500 bg-white/10 h-1.5 rounded-lg appearance-none cursor-pointer">
-                </div>
-            </div>
-            <button onclick="closeModal('opcoes')" class="w-full py-3 bg-blue-600 hover:bg-blue-500 transition-colors rounded-lg font-bold text-xs uppercase tracking-[0.2em]">SALVAR E FECHAR</button>
-        </div>
-    </div>
-
-    <!-- Modal: SAIR -->
-    <div id="modal-sair" class="fixed inset-0 z-50 bg-[#020205]/95 backdrop-blur-md hidden items-center justify-center p-4 pointer-events-auto">
-        <div class="bg-gradient-to-b from-[#0a0a1a] to-[#04040d] border border-red-500/20 max-w-md w-full rounded-2xl p-6 md:p-8 space-y-6 text-center">
-            <i data-lucide="alert-triangle" class="w-16 h-16 text-red-500 mx-auto animate-pulse"></i>
-            <h3 class="title-celestial text-2xl font-bold tracking-[0.2em] text-red-200">INTERROMPER SIMULAÇÃO?</h3>
-            <div class="grid grid-cols-2 gap-4 pt-2">
-                <button onclick="closeModal('sair')" class="py-3 bg-white/5 border border-white/10 hover:bg-white/10 transition-colors rounded-lg text-xs font-bold uppercase tracking-wider">PERMANECER</button>
-                <button onclick="exitApp()" class="py-3 bg-red-600/30 border border-red-500/50 hover:bg-red-600 transition-colors rounded-lg text-xs font-bold uppercase tracking-wider text-red-200">ENCERRAR</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- ================= LÓGICAS E SISTEMAS DE FÍSICA ================= -->
+    <!-- ================= SISTEMAS FÍSICOS E DE INTERAÇÃO ================= -->
     <script>
-        // Efeitos Sonoros Dinâmicos (Web Audio API) - Escopo Global
+        // Inicializar ícones Lucide
+        lucide.createIcons();
+
+        // Efeitos Sonoros Dinâmicos para cliques (Web Audio API)
         const playSfx = (type) => {
             try {
                 const ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -280,351 +161,344 @@
                 
                 if (type === 'hover') {
                     osc.frequency.setValueAtTime(180, ctx.currentTime);
-                    osc.frequency.exponentialRampToValueAtTime(280, ctx.currentTime + 0.15);
+                    osc.frequency.exponentialRampToValueAtTime(280, ctx.currentTime + 0.12);
                     gain.gain.setValueAtTime(0.01, ctx.currentTime);
-                    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+                    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
                     osc.start();
-                    osc.stop(ctx.currentTime + 0.15);
+                    osc.stop(ctx.currentTime + 0.12);
                 } else if (type === 'click') {
-                    osc.frequency.setValueAtTime(150, ctx.currentTime);
-                    osc.frequency.exponentialRampToValueAtTime(450, ctx.currentTime + 0.3);
-                    gain.gain.setValueAtTime(0.05, ctx.currentTime);
-                    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+                    osc.frequency.setValueAtTime(140, ctx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(380, ctx.currentTime + 0.2);
+                    gain.gain.setValueAtTime(0.04, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2);
                     osc.start();
-                    osc.stop(ctx.currentTime + 0.3);
-                } else if (type === 'play') {
-                    osc.frequency.setValueAtTime(100, ctx.currentTime);
-                    osc.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 1.5);
-                    gain.gain.setValueAtTime(0.08, ctx.currentTime);
-                    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.5);
-                    osc.start();
-                    osc.stop(ctx.currentTime + 1.5);
+                    osc.stop(ctx.currentTime + 0.2);
                 }
-            } catch (e) { /* Fallback silencioso */ }
+            } catch (e) { /* Fallback silencioso se bloqueado */ }
         };
 
-        // Inicialização de Variáveis Globais
+        // Elementos e Estado Global
         const canvas = document.getElementById('cosmicCanvas');
         const ctx = canvas.getContext('2d');
         const musicPlayer = document.getElementById('musicPlayer');
         
-        let particles = [];
-        let numParticles = 1000;
-        let connectionDist = 70;
-        let mouse = { x: null, y: null, vx: 0, vy: 0, lastX: null, lastY: null, radius: 120 };
         let isPlaying = false;
-        let colorPulse = 0;
-        let speedFactor = 0.5;
+        let colorHue = 240; // Matiz inicial (Azul/Roxo)
+        let colorPulse = 0; // DECLARAÇÃO DA VARIÁVEL DE PULSAÇÃO DE COR DAS PARTÍCULAS
+        let intensityPulse = 0; // Controla pulsação da luz de neon
+        
+        let particles = [];
+        const maxParticles = 650; // Quantidade ideal para não travar sob nenhuma circunstância
+        const mouse = { x: null, y: null, px: null, py: null, vx: 0, vy: 0, active: false };
 
-        // Configuração de tamanho do canvas adaptável
-        function resizeCanvas() {
+        // Ajuste dinâmico de tamanho do Canvas
+        function resize() {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
             initParticles();
         }
 
-        // Classe da Partícula Interativa
-        class Particle {
+        // Definição da Partícula de Fluido e Fumaça
+        class FluidParticle {
             constructor() {
-                this.x = Math.random() * canvas.width;
-                this.y = Math.random() * canvas.height;
-                this.homeX = this.x;
-                this.homeY = this.y;
-                this.vx = 0;
-                this.vy = 0;
-                this.baseSize = Math.random() * 1.5 + 0.5;
-                this.size = this.baseSize;
-                this.baseColor = { r: 180, g: 210, b: 255 };
-                this.hueOffset = Math.random() * 60; // Variação de cor individual
+                this.reset(true);
+            }
+
+            reset(init = false) {
+                this.x = init ? Math.random() * canvas.width : (mouse.x !== null ? mouse.x + (Math.random() - 0.5) * 50 : Math.random() * canvas.width);
+                this.y = init ? Math.random() * canvas.height : (mouse.y !== null ? mouse.y + (Math.random() - 0.5) * 50 : Math.random() * canvas.height);
+                
+                // Vetores de velocidade
+                this.vx = (Math.random() - 0.5) * 2;
+                this.vy = (Math.random() - 0.5) * 2;
+                
+                // Características físicas
+                this.alpha = Math.random() * 0.4 + 0.2;
+                this.decay = Math.random() * 0.004 + 0.002;
+                
+                // Tipos de partícula (fumaça volumosa ou fagulhas brilhantes)
+                this.type = Math.random() > 0.4 ? 'smoke' : 'spark';
+                this.size = this.type === 'smoke' ? Math.random() * 40 + 20 : Math.random() * 2 + 1;
+                this.baseSize = this.size;
+                this.hueOffset = Math.random() * 50; 
             }
 
             update() {
-                // Força de retorno à posição original (Efeito Mola/Elástico)
-                let dxHome = this.homeX - this.x;
-                let dyHome = this.homeY - this.y;
-                this.vx += dxHome * 0.015;
-                this.vy += dyHome * 0.015;
-
-                // Interação com o mouse (Apenas quando a música está tocando!)
+                // Interação com o mouse (Apenas se a música estiver ativa e o mouse se mover)
                 if (isPlaying && mouse.x !== null) {
-                    let dxMouse = mouse.x - this.x;
-                    let dyMouse = mouse.y - this.y;
-                    let distMouse = Math.sqrt(dxMouse * dxMouse + dyMouse * dyMouse);
+                    let dx = mouse.x - this.x;
+                    let dy = mouse.y - this.y;
+                    let dist = Math.sqrt(dx * dx + dy * dy);
 
-                    if (distMouse < mouse.radius) {
-                        // Calcula repulsão baseada na proximidade
-                        let force = (mouse.radius - distMouse) / mouse.radius;
+                    if (dist < attractionRadius()) {
+                        let force = (attractionRadius() - dist) / attractionRadius();
                         
-                        // Direção da força influenciada pelo movimento do mouse (desenho livre)
-                        let pushX = (dxMouse / distMouse) * force * -6;
-                        let pushY = (dyMouse / distMouse) * force * -6;
+                        // Direção de repulsão orbital cósmica
+                        let repulseX = (dx / dist) * force * -4;
+                        let repulseY = (dy / dist) * force * -4;
 
-                        // Adiciona a inércia e velocidade do mouse para criar redemoinhos/ondas
-                        let dragX = mouse.vx * force * 1.5;
-                        let dragY = mouse.vy * force * 1.5;
+                        // Adiciona a inércia e velocidade de arraste do mouse (desenho de fumaça)
+                        let dragX = mouse.vx * force * 1.8;
+                        let dragY = mouse.vy * force * 1.8;
 
-                        this.vx += pushX + dragX;
-                        this.vy += pushY + dragY;
+                        this.vx += repulseX + dragX;
+                        this.vy += repulseY + dragY;
 
-                        // Partículas perto do mouse brilham e expandem de tamanho
-                        this.size = this.baseSize * (1 + force * 2.5);
-                    } else {
-                        // Retorno gradual ao tamanho padrão
-                        this.size = this.size * 0.95 + this.baseSize * 0.05;
+                        // Partículas de fumaça se expandem no vácuo ao toque
+                        if (this.type === 'smoke') {
+                            this.size = this.baseSize * (1 + force * 1.5);
+                        }
                     }
-                } else {
-                    this.size = this.size * 0.95 + this.baseSize * 0.05;
                 }
 
-                // Aplica atrito suave (fricção cósmica)
-                this.vx *= 0.88;
-                this.vy *= 0.88;
+                // Aplica atrito de viscosidade (Mantém movimentos suaves sem travamentos)
+                this.vx *= 0.95;
+                this.vy *= 0.95;
 
-                // Move a partícula
-                this.x += this.vx * speedFactor;
-                this.y += this.vy * speedFactor;
+                // Move
+                this.x += this.vx;
+                this.y += this.vy;
 
-                // Pequena flutuação aleatória natural (vento estelar)
-                this.x += Math.sin(Date.now() * 0.001 + this.homeY) * 0.05;
-                this.y += Math.cos(Date.now() * 0.001 + this.homeX) * 0.05;
+                // Consome a opacidade da fumaça (Simula evaporação)
+                this.alpha -= this.decay;
+
+                // Margens limpas: Se sair da tela ou evaporar, reseta
+                if (this.alpha <= 0 || this.x < 0 || this.x > canvas.width || this.y < 0 || this.y > canvas.height) {
+                    this.reset(false);
+                }
             }
 
             draw() {
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-                
-                if (isPlaying) {
-                    // Gradiente dinâmico de cores baseado na pulsação e velocidade individual
-                    let currentHue = (200 + Math.sin(colorPulse + this.hueOffset) * 40) % 360;
-                    ctx.fillStyle = `hsla(${currentHue}, 90%, 75%, 0.85)`;
-                    ctx.shadowBlur = this.size * 2;
-                    ctx.shadowColor = `hsla(${currentHue}, 90%, 65%, 0.5)`;
+                if (this.alpha <= 0) return;
+
+                ctx.save();
+                ctx.globalCompositeOperation = "screen";
+
+                // Cálculo da matiz neon cíclica baseada no tempo global com base em colorPulse agora existente
+                let hue = Math.floor(colorPulse + this.hueOffset) % 360;
+
+                if (this.type === 'smoke') {
+                    // Desenha fumaça volumosa de neon com variações de cores ricas e dinâmicas
+                    let grad = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.size);
+                    if (isPlaying) {
+                        grad.addColorStop(0, `hsla(${hue}, 90%, 65%, ${this.alpha * 0.4})`);
+                        grad.addColorStop(0.5, `hsla(${(hue + 40) % 360}, 85%, 55%, ${this.alpha * 0.15})`);
+                        grad.addColorStop(1, 'transparent');
+                    } else {
+                        // Quando inativo: Fumaça branca estelar opaca e fria
+                        grad.addColorStop(0, `rgba(255, 255, 255, ${this.alpha * 0.12})`);
+                        grad.addColorStop(1, 'transparent');
+                    }
+                    ctx.fillStyle = grad;
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                    ctx.fill();
                 } else {
-                    // Sem música: partículas cinzentas e dormentes
-                    ctx.fillStyle = "rgba(100, 116, 139, 0.35)";
-                    ctx.shadowBlur = 0;
+                    // Fagulhas e fios brilhantes
+                    if (isPlaying) {
+                        ctx.shadowBlur = this.size * 5;
+                        ctx.shadowColor = `hsla(${hue}, 100%, 70%, 0.8)`;
+                        ctx.fillStyle = `hsla(${(hue - 20) % 360}, 100%, 80%, ${this.alpha * 0.9})`;
+                    } else {
+                        ctx.fillStyle = `rgba(255, 255, 255, ${this.alpha * 0.4})`;
+                    }
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                    ctx.fill();
                 }
-                
-                ctx.fill();
-                ctx.shadowBlur = 0; // reset
+                ctx.restore();
             }
         }
 
-        // Inicializador da nuvem estelar
+        // Inicializador de partículas
         function initParticles() {
             particles = [];
-            // Distribuição inteligente de partículas em formato de galáxia espiral
-            const centerX = canvas.width / 2;
-            const centerY = canvas.height / 2;
-
-            for (let i = 0; i < numParticles; i++) {
-                let p = new Particle();
-                
-                // Distribui em formato orbital centralizado de forma harmônica
-                let angle = Math.random() * Math.PI * 2;
-                let radius = Math.pow(Math.random(), 1.5) * (Math.min(canvas.width, canvas.height) * 0.45);
-                
-                p.x = centerX + Math.cos(angle) * radius;
-                p.y = centerY + Math.sin(angle) * radius;
-                p.homeX = p.x;
-                p.homeY = p.y;
-                
+            for (let i = 0; i < maxParticles; i++) {
+                let p = new FluidParticle();
                 particles.push(p);
             }
         }
 
-        // Loop principal de renderização e física
-        function updateAndDraw() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        // Retorna raio de atração/interação dinâmico
+        function attractionRadius() {
+            // Se o mouse estiver se movendo rápido, o alcance da onda aumenta
+            let speed = Math.sqrt(mouse.vx * mouse.vx + mouse.vy * mouse.vy);
+            return Math.min(350, 180 + speed * 12);
+        }
 
-            // Incrementa variável de pulsação de cores
-            if (isPlaying) colorPulse += 0.015;
+        // Loop de Renderização Principal
+        function animate() {
+            // EFEITO DE RASTRO PERSISTENTE (Crucial para fumaça de neon/fios ficarem fluidos e macios)
+            ctx.fillStyle = "rgba(2, 2, 5, 0.07)";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Desenha e calcula conexões de constelação (Linhas)
+            // Incrementa ciclo de cores de neon infinitamente
             if (isPlaying) {
-                ctx.lineWidth = 0.5;
-                for (let i = 0; i < particles.length; i++) {
-                    for (let j = i + 1; j < particles.length; j++) {
-                        let dx = particles[i].x - particles[j].x;
-                        let dy = particles[i].y - particles[j].y;
-                        let dist = Math.sqrt(dx * dx + dy * dy);
+                colorHue = (colorHue + 0.15) % 360;
+                colorPulse = (colorPulse + 0.5) % 360; // INCREMENTO SEGURO DA VARIÁVEL DE PULSAÇÃO
+                intensityPulse = Math.sin(Date.now() * 0.002) * 0.15 + 0.85;
 
-                        if (dist < connectionDist) {
-                            // Opacidade proporcional à proximidade
-                            let alpha = (1 - dist / connectionDist) * 0.22;
-                            ctx.strokeStyle = `rgba(147, 197, 253, ${alpha})`;
-                            ctx.beginPath();
-                            ctx.moveTo(particles[i].x, particles[i].y);
-                            ctx.lineTo(particles[j].x, particles[j].y);
-                            ctx.stroke();
-                        }
-                    }
-                }
+                // Desenha pulsação luminosa de fundo neon que aumenta e diminui suavemente
+                drawGlobalAmbientGlow();
             }
 
-            // Atualiza e desenha todas as partículas individuais
+            // Atualiza e desenha fumaça e fluidos
             for (let i = 0; i < particles.length; i++) {
                 particles[i].update();
                 particles[i].draw();
             }
 
-            // Reduz gradualmente a velocidade do mouse registrada
-            mouse.vx *= 0.9;
-            mouse.vy *= 0.9;
+            // Reduz inércia residual da velocidade registrada do mouse
+            mouse.vx *= 0.92;
+            mouse.vy *= 0.92;
 
-            requestAnimationFrame(updateAndDraw);
+            requestAnimationFrame(animate);
         }
 
-        // Eventos de rastreamento do ponteiro do mouse
+        // Desenha clarão de luz de neon ambiente pulsante que ocupa a tela
+        function drawGlobalAmbientGlow() {
+            ctx.save();
+            ctx.globalCompositeOperation = "screen";
+            let centerGlow = ctx.createRadialGradient(
+                canvas.width / 2, canvas.height / 2, 10,
+                canvas.width / 2, canvas.height / 2, Math.max(canvas.width, canvas.height) * 0.8
+            );
+            centerGlow.addColorStop(0, `hsla(${colorHue}, 95%, 45%, ${0.05 * intensityPulse})`);
+            centerGlow.addColorStop(1, "transparent");
+            ctx.fillStyle = centerGlow;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.restore();
+        }
+
+        // Rastreamento preciso do ponteiro do mouse
         window.addEventListener('mousemove', (e) => {
-            if (mouse.lastX !== null && mouse.lastY !== null) {
-                // Calcula vetor de velocidade do movimento do cursor
-                mouse.vx = e.clientX - mouse.lastX;
-                mouse.vy = e.clientY - mouse.lastY;
+            if (mouse.x !== null && mouse.y !== null) {
+                mouse.vx = e.clientX - mouse.x;
+                mouse.vy = e.clientY - mouse.y;
             }
             mouse.x = e.clientX;
             mouse.y = e.clientY;
-            mouse.lastX = e.clientX;
-            mouse.lastY = e.clientY;
         });
 
-        // Retira interação caso o ponteiro saia da tela
         window.addEventListener('mouseout', () => {
             mouse.x = null;
             mouse.y = null;
-            mouse.lastX = null;
-            mouse.lastY = null;
             mouse.vx = 0;
             mouse.vy = 0;
         });
 
-        // Configuração Inicial de Redimensionamento do Canvas
-        window.addEventListener('resize', resizeCanvas);
-        resizeCanvas();
-        updateAndDraw();
+        // Configuração Inicial de Execução
+        window.addEventListener('resize', resize);
+        resize();
+        animate();
 
-        // ================= SISTEMA DO PLAYER E COMPORTAMENTO =================
+        // ================= FLUXO DINÂMICO DE MÚSICA & INTERFACE =================
 
-        // Selecionar e Reproduzir Faixa
         function selectTrack(fileName, trackName, buttonId) {
             playSfx('click');
-            
-            // Remove destaque ativo de botões anteriores
-            document.querySelectorAll('[id^="btn-"]').forEach(btn => {
-                btn.classList.remove('border-purple-400', 'text-white', 'bg-white/10');
-            });
 
-            // Adiciona destaque ao botão selecionado
-            const activeBtn = document.getElementById(buttonId);
-            if (activeBtn) {
-                activeBtn.classList.add('border-purple-400', 'text-white', 'bg-white/10');
-            }
-
-            // Altera fonte e toca
+            // Troca o arquivo de áudio e reproduz
             musicPlayer.src = fileName;
             musicPlayer.play().then(() => {
                 isPlaying = true;
-                updateStatusUI(trackName);
+                
+                // Atualiza textos
+                document.getElementById('nowPlayingText').innerText = trackName.toUpperCase();
+                document.getElementById('statusIndicator').className = "h-2 w-2 rounded-full bg-emerald-500 animate-pulse";
+                document.getElementById('statusText').innerText = "SINFONIA DE NEON COMPLETAMENTE ATIVA";
+
+                // Inicia transição e esconde todos os componentes de interface
+                toggleInterface(true);
             }).catch(err => {
-                console.warn("Autoplay bloqueado pelo browser. Aguardando interação.", err);
+                console.warn("Autoplay rejeitado pelo navegador.", err);
                 isPlaying = false;
-                updateStatusUI("ERRO AO CARREGAR");
             });
         }
 
-        // Pausar Áudio
         function pauseMusic() {
             playSfx('click');
             musicPlayer.pause();
             isPlaying = false;
-            updateStatusUI(null);
-            
-            // Remove destaque de botões de música ativos ao pausar
-            document.querySelectorAll('[id^="btn-"]').forEach(btn => {
-                btn.classList.remove('border-purple-400', 'text-white', 'bg-white/10');
-            });
+
+            // Restaura textos padrão
+            document.getElementById('nowPlayingText').innerText = "NENHUMA FAIXA ATIVA";
+            document.getElementById('statusIndicator').className = "h-2 w-2 rounded-full bg-red-500 animate-pulse";
+            document.getElementById('statusText').innerText = "SINFONIA INATIVA (SELECIONE UMA MÚSICA)";
+
+            // Restaura componentes de interface originais
+            toggleInterface(false);
         }
 
-        // Alterar Volume
+        // Monitor de encerramento da música (Quando a música acaba, a interface retorna automaticamente)
+        musicPlayer.addEventListener('ended', () => {
+            isPlaying = false;
+            document.getElementById('nowPlayingText').innerText = "NENHUMA FAIXA ATIVA";
+            document.getElementById('statusIndicator').className = "h-2 w-2 rounded-full bg-red-500 animate-pulse";
+            document.getElementById('statusText').innerText = "SINFONIA INATIVA (SELECIONE UMA MÚSICA)";
+            toggleInterface(false);
+        });
+
+        // Ajuste de Volume
         function setVolume(value) {
             musicPlayer.volume = value / 100;
         }
 
-        // Atualização visual do estado das partículas
-        function updateStatusUI(trackName) {
-            const statusInd = document.getElementById('statusIndicator');
-            const statusTxt = document.getElementById('statusText');
-            const nowPlaying = document.getElementById('nowPlayingText');
-            const card = document.getElementById('playerCard');
-            const disc = document.getElementById('discIcon');
+        // Função responsável por ocultar/revelar elementos com transição fluida
+        function toggleInterface(hide) {
+            const uiTitle = document.getElementById('uiTitle');
+            const playerCard = document.getElementById('playerCard');
+            const uiHeader = document.getElementById('uiHeader');
+            const stopBtnContainer = document.getElementById('stopButtonContainer');
 
-            if (isPlaying && trackName) {
-                statusInd.className = "h-2 w-2 rounded-full bg-emerald-500 animate-pulse";
-                statusTxt.innerText = "SINTONIZADO: EMISSÃO DE ONDAS ATIVA";
-                nowPlaying.innerText = trackName.toUpperCase();
-                card.classList.add('active-player');
-                disc.classList.add('animate-spin');
-                disc.style.animationDuration = '4s';
+            if (hide) {
+                // Esconde interface
+                uiTitle.classList.add('opacity-0', 'scale-95', 'pointer-events-none');
+                playerCard.classList.add('opacity-0', 'scale-95', 'pointer-events-none');
+                uiHeader.classList.add('opacity-0', 'pointer-events-none');
+
+                // Revela apenas o botão futurista de parar música após delay
+                setTimeout(() => {
+                    stopBtnContainer.classList.remove('hidden');
+                    setTimeout(() => {
+                        stopBtnContainer.classList.remove('opacity-0', 'scale-90');
+                        stopBtnContainer.classList.add('opacity-100', 'scale-100');
+                    }, 50);
+                }, 400);
             } else {
-                statusInd.className = "h-2 w-2 rounded-full bg-red-500 animate-pulse";
-                statusTxt.innerText = "PARTÍCULAS: DORMINTES (SEM MÚSICA)";
-                nowPlaying.innerText = "NENHUMA FAIXA ATIVA";
-                card.classList.remove('active-player');
-                disc.classList.remove('animate-spin');
+                // Esconde botão de parar música
+                stopBtnContainer.classList.remove('opacity-100', 'scale-100');
+                stopBtnContainer.classList.add('opacity-0', 'scale-90');
+                setTimeout(() => {
+                    stopBtnContainer.classList.add('hidden');
+                    
+                    // Restaura interface principal
+                    uiTitle.classList.remove('opacity-0', 'scale-95', 'pointer-events-none');
+                    playerCard.classList.remove('opacity-0', 'scale-95', 'pointer-events-none');
+                    uiHeader.classList.remove('opacity-0', 'pointer-events-none');
+                }, 400);
             }
         }
 
-        // Opções dinâmicas de Ajuste (Modal)
-        function changeDensity(val) {
-            numParticles = parseInt(val);
-            document.getElementById('particleDensityVal').innerText = val;
-            initParticles();
-        }
-
-        // Altera raio de gravidade do mouse
-        function changeRadius(val) {
-            mouse.radius = parseInt(val);
-            document.getElementById('gravityRadiusVal').innerText = `${val}px`;
-        }
-
-        // Modais
+        // Modais básicos e limpos para opções e encerramento
         function openModal(id) {
             playSfx('click');
-            const m = document.getElementById(`modal-${id}`);
-            m.classList.remove('hidden');
-            m.classList.add('flex');
+            const modal = document.getElementById(`modal-${id}`);
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
         }
 
-        // Fecha modais
         function closeModal(id) {
             playSfx('click');
-            const m = document.getElementById(`modal-${id}`);
-            m.classList.add('hidden');
-            m.classList.remove('flex');
+            const modal = document.getElementById(`modal-${id}`);
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
         }
 
-        // Início do Jogo
-        function startGame() {
-            playSfx('play');
-            // Animação de dobra hiperespacial acelerando partículas antes da transição
-            speedFactor = 15;
-            setTimeout(() => {
-                document.body.innerHTML = `
-                    <div class="h-full w-full bg-[#020205] flex flex-col items-center justify-center text-center p-6 space-y-4">
-                        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-400"></div>
-                        <h2 class="title-celestial text-xl tracking-[0.3em] text-blue-200">INICIANDO PARTIDA</h2>
-                        <p class="text-xs text-slate-500 tracking-widest uppercase">Carregando mapa interestelar...</p>
-                    </div>
-                `;
-            }, 1500);
-        }
-
-        // Encerrar App
         function exitApp() {
             playSfx('click');
             document.body.innerHTML = `
-                <div class="h-full w-full bg-black flex flex-col items-center justify-center text-center p-6">
-                    <p class="title-celestial text-sm tracking-[0.5em] text-slate-600 uppercase">Aventura suspensa. Até logo, Comandante.</p>
+                <div class="h-full w-full bg-[#020205] flex flex-col items-center justify-center text-center p-6">
+                    <p class="title-celestial text-sm tracking-[0.5em] text-slate-500 uppercase">Simulação encerrada com sucesso.</p>
                 </div>
             `;
         }
