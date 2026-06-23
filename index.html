@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cosmic Soundwave - Menu Principal</title>
+    <title>Cosmic Beat - Rhythm Game</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Google Fonts: Cinzel (Celestial) e Space Grotesk (Tech) -->
@@ -25,300 +25,205 @@
         }
         /* Efeito de vidro galáctico */
         .glass-panel {
-            background: rgba(6, 6, 15, 0.7);
+            background: rgba(6, 6, 15, 0.75);
             border: 1px solid rgba(255, 255, 255, 0.08);
             backdrop-filter: blur(20px);
             box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.6);
         }
-        /* Estilo premium para botões */
-        .btn-celestial {
-            position: relative;
-            background: rgba(255, 255, 255, 0.02);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+        /* Teclas do piano virtual cósmico */
+        .piano-key {
+            transition: all 0.2s ease;
         }
-        .btn-celestial:hover {
-            border-color: rgba(168, 85, 247, 0.6);
-            box-shadow: 0 0 25px rgba(168, 85, 247, 0.25);
-            transform: translateY(-2px);
-            background: rgba(255, 255, 255, 0.05);
+        .piano-key:active, .piano-key.active-press {
+            transform: scale(0.95) translateY(4px);
+            box-shadow: 0 0 30px var(--glow-color);
+            background: var(--glow-color);
+            color: #000;
         }
-        /* Animação de pulsar do player */
-        @keyframes orbitPulse {
-            0%, 100% { box-shadow: 0 0 15px rgba(168, 85, 247, 0.15); }
-            50% { box-shadow: 0 0 35px rgba(59, 130, 246, 0.35); }
-        }
-        .active-player {
-            animation: orbitPulse 4s infinite ease-in-out;
-            border-color: rgba(168, 85, 247, 0.4);
-        }
-        /* Fade-out para transição suave de elementos de interface */
+        /* Animações de Fade-out suaves */
         .fade-transition {
             transition: opacity 0.8s cubic-bezier(0.25, 1, 0.5, 1), transform 0.8s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+        /* Piscar lento do botão ativo */
+        @keyframes slowFlash {
+            0%, 100% { opacity: 0.3; box-shadow: 0 0 10px var(--glow-color); }
+            50% { opacity: 1.0; box-shadow: 0 0 35px var(--glow-color); }
+        }
+        .flash-slow {
+            animation: slowFlash 0.8s infinite ease-in-out;
+            border-color: var(--glow-color) !important;
         }
     </style>
 </head>
 <body class="h-full relative flex flex-col items-center justify-center text-white">
 
-    <!-- CANVAS DO AUDIO SPECTRUM E CHUVA DE GLITTER -->
-    <canvas id="cosmicCanvas" class="absolute inset-0 z-0 bg-[#010103]"></canvas>
+    <!-- CANVAS DO JOGO (Esfera, rastro de glitter, explosões e teclas) -->
+    <canvas id="gameCanvas" class="absolute inset-0 z-0 bg-[#010103]"></canvas>
 
-    <!-- Overlay de vinheta para realçar o brilho das luzes de neon -->
-    <div class="absolute inset-0 bg-radial-gradient from-transparent via-[#010103]/50 to-[#010103] z-[1] pointer-events-none"></div>
+    <!-- Overlay de vinheta cósmica -->
+    <div class="absolute inset-0 bg-radial-gradient from-transparent via-[#010103]/40 to-[#010103] z-[1] pointer-events-none"></div>
 
-    <!-- ELEMENTO DE ÁUDIO -->
-    <audio id="musicPlayer" loop></audio>
+    <!-- ELEMENTO DE ÁUDIO (beatmj.mp3) -->
+    <audio id="musicPlayer" src="beatmj.mp3" preload="auto"></audio>
 
-    <!-- INTERFACE DO USUÁRIO -->
-    <div class="relative z-10 w-full h-full flex flex-col justify-between p-6 md:p-12 pointer-events-none select-none">
-        
-        <!-- TOPO: Indicador de status dinâmico -->
-        <header id="uiHeader" class="w-full flex justify-between items-center text-xs tracking-[0.2em] text-slate-300 font-light transition-opacity duration-1000">
-            <div class="flex items-center gap-2 bg-black/50 px-4 py-2 rounded-full border border-white/5 backdrop-blur-sm pointer-events-auto">
-                <span id="statusIndicator" class="h-2 w-2 rounded-full bg-red-500 animate-pulse"></span>
-                <span id="statusText">SINFONIA INATIVA (SELECIONE UMA TRILHA)</span>
+    <!-- INTERFACE DO USUÁRIO (TELA INICIAL) -->
+    <div id="startScreen" class="relative z-10 max-w-md w-full p-6 text-center space-y-8 glass-panel rounded-3xl pointer-events-auto select-none">
+        <div class="space-y-3">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/10 border border-purple-400/20 text-purple-300 text-[10px] tracking-[0.3em] uppercase backdrop-blur-sm">
+                <i data-lucide="music" class="w-3.5 h-3.5"></i> Jogo de Ritmo Interativo
             </div>
-            <div class="hidden md:flex items-center gap-2 bg-black/50 px-4 py-2 rounded-full border border-white/5 backdrop-blur-sm">
-                <i data-lucide="sparkles" class="w-3.5 h-3.5 text-purple-400 animate-pulse"></i>
-                <span id="instructionText">ESCOLHA UMA MÚSICA E SEGURE O CLIQUE PARA INTERAGIR</span>
-            </div>
-        </header>
+            <h1 class="title-celestial text-4xl font-extrabold uppercase text-transparent bg-clip-text bg-gradient-to-b from-white via-slate-100 to-purple-200 drop-shadow-md">
+                BEAT IT<br><span class="text-xl font-light tracking-[0.4em] text-purple-300">RHYTHM EXPERIENCE</span>
+            </h1>
+            <p class="text-xs text-slate-400 leading-relaxed px-4">
+                Use as teclas <strong class="text-purple-300">1, 2 e 3</strong> do seu teclado ou clique nas teclas na tela. Segure o clique do mouse nas teclas para liberar rastros de glitter!
+            </p>
+        </div>
 
-        <!-- CENTRO: Título e Player Holográfico -->
-        <main class="flex flex-col items-center justify-center flex-grow py-6 text-center space-y-8">
-            
-            <!-- Título Principal (Oculta ao iniciar música) -->
-            <div id="uiTitle" class="space-y-3 fade-transition">
-                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/10 border border-purple-400/20 text-purple-300 text-[10px] tracking-[0.3em] uppercase backdrop-blur-sm">
-                    <i data-lucide="activity" class="w-3.5 h-3.5"></i> Spectrum & Glitter Cósmico
-                </div>
-                <h1 class="title-celestial text-5xl md:text-7xl tracking-[0.25em] font-extrabold uppercase text-transparent bg-clip-text bg-gradient-to-b from-white via-slate-100 to-purple-200 drop-shadow-md">
-                    COSMIC<br><span class="text-3xl md:text-5xl font-light tracking-[0.4em] text-purple-300">SPECTRUM</span>
-                </h1>
-            </div>
-
-            <!-- CARD DO PLAYER (Oculta ao iniciar música) -->
-            <div id="playerCard" class="glass-panel p-6 rounded-2xl w-full max-w-lg pointer-events-auto fade-transition">
-                <div class="flex flex-col space-y-5">
-                    <div class="flex items-center justify-between border-b border-white/10 pb-3">
-                        <div class="flex items-center gap-2">
-                            <i data-lucide="music-4" id="discIcon" class="w-5 h-5 text-purple-400"></i>
-                            <span class="text-xs tracking-[0.2em] font-bold text-slate-300 uppercase">Sintonizador de Espectro</span>
-                        </div>
-                        <span id="nowPlayingText" class="text-[10px] text-purple-300 tracking-wider font-bold">NENHUMA FAIXA ATIVA</span>
-                    </div>
-
-                    <!-- Lista Completa das 4 Faixas -->
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                        <button onclick="selectTrack('beatmj.mp3', 'Beat It - MJ', 'btn-beat')" id="btn-beat" class="btn-celestial py-3 px-4 rounded-xl text-xs tracking-wider font-medium text-left flex items-center justify-between hover:text-white text-slate-400">
-                            <span class="truncate">1. Beat It</span>
-                            <i data-lucide="play" class="w-3.5 h-3.5 text-slate-500"></i>
-                        </button>
-                        <button onclick="selectTrack('billiemj.mp3', 'Billie Jean - MJ', 'btn-billie')" id="btn-billie" class="btn-celestial py-3 px-4 rounded-xl text-xs tracking-wider font-medium text-left flex items-center justify-between hover:text-white text-slate-400">
-                            <span class="truncate">2. Billie Jean</span>
-                            <i data-lucide="play" class="w-3.5 h-3.5 text-slate-500"></i>
-                        </button>
-                        <button onclick="selectTrack('badmj.mp3', 'Bad - MJ', 'btn-bad')" id="btn-bad" class="btn-celestial py-3 px-4 rounded-xl text-xs tracking-wider font-medium text-left flex items-center justify-between hover:text-white text-slate-400">
-                            <span class="truncate">3. Bad</span>
-                            <i data-lucide="play" class="w-3.5 h-3.5 text-slate-500"></i>
-                        </button>
-                        <button onclick="selectTrack('olodummj.mp3', 'They Don\'t Care (Olodum)', 'btn-olodum')" id="btn-olodum" class="btn-celestial py-3 px-4 rounded-xl text-xs tracking-wider font-medium text-left flex items-center justify-between hover:text-white text-slate-400">
-                            <span class="truncate">4. Olodum Mix</span>
-                            <i data-lucide="play" class="w-3.5 h-3.5 text-slate-500"></i>
-                        </button>
-                    </div>
-
-                    <!-- Controle de Volume Integrado -->
-                    <div class="flex items-center justify-end gap-3 pt-1">
-                        <i data-lucide="volume-2" class="w-4 h-4 text-slate-400"></i>
-                        <input type="range" min="0" max="100" value="80" oninput="setVolume(this.value)" class="w-24 accent-purple-500 bg-white/10 h-1.5 rounded-lg cursor-pointer">
-                    </div>
-                </div>
-            </div>
-
-            <!-- BOTÃO DE PARAR: Visível apenas durante a reprodução da música -->
-            <div id="stopButtonContainer" class="pointer-events-auto fade-transition opacity-0 scale-90 hidden">
-                <button onclick="pauseMusic()" class="relative px-10 py-4 bg-purple-600/10 border border-purple-500/40 hover:bg-purple-600/25 text-purple-200 rounded-full text-xs font-bold uppercase tracking-[0.3em] transition-all hover:scale-105 active:scale-95 shadow-[0_0_30px_rgba(168,85,247,0.2)] flex items-center gap-2.5">
-                    <i data-lucide="square" class="w-4 h-4 fill-current text-purple-400"></i> PARAR TRILHA CÓSMICA
-                </button>
-            </div>
-        </main>
+        <button onclick="initGame()" class="w-full btn-celestial py-4 rounded-xl text-xs tracking-[0.3em] font-bold uppercase text-purple-200 border border-purple-400/20 hover:border-purple-400 shadow-[0_0_30px_rgba(168,85,247,0.15)] flex items-center justify-center gap-2 group">
+            DESPERTAR SINFONIA <i data-lucide="play" class="w-4 h-4 fill-current"></i>
+        </button>
     </div>
+
+    <!-- INTERFACE DE PAUSA / GAMEPLAY -->
+    <div id="gameUI" class="absolute inset-x-0 bottom-12 z-10 flex flex-col items-center space-y-6 opacity-0 pointer-events-none transition-all duration-1000">
+        
+        <!-- HUD Informativo de Notas -->
+        <div class="flex items-center gap-4 bg-black/60 px-5 py-2.5 rounded-full border border-white/5 backdrop-blur">
+            <div class="flex items-center gap-1.5 text-xs tracking-wider">
+                <span id="gameStatusIndicator" class="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span id="gameStatusText" class="text-slate-300 uppercase font-mono">EM SINTONIA</span>
+            </div>
+            <div class="h-4 w-[1px] bg-white/10"></div>
+            <span id="streakCounter" class="text-xs font-mono text-purple-300">COMBO: 0</span>
+        </div>
+
+        <!-- Botão Minimalista de Parar Música -->
+        <button onclick="pauseAndExit()" class="pointer-events-auto px-6 py-2 bg-red-600/10 border border-red-500/20 hover:bg-red-600/25 text-red-300 rounded-full text-[10px] font-bold uppercase tracking-[0.2em] transition-all hover:scale-105 active:scale-95 shadow-[0_0_20px_rgba(239,68,68,0.15)]">
+            SAIR DA SINFONIA
+        </button>
+    </div>
+
 
     <!-- ================= SISTEMAS FÍSICOS E DE INTERAÇÃO ================= -->
     <script>
-        // Inicializar ícones Lucide
-        lucide.createIcons();
+        // Timestamps exatos das batidas fornecidos por ti
+        const beatTimestamps = [
+            0.348, 2.090, 3.738, 5.480, 7.198, 8.963, 10.658, 11.122, 11.540, 11.958, 
+            12.399, 12.841, 13.491, 13.677, 14.141, 14.350, 14.559, 15.000, 15.232, 
+            15.418, 15.650, 15.882, 16.323, 16.764, 17.206, 17.647, 18.089, 18.530, 
+            18.971, 19.413, 19.854, 20.296, 20.737, 21.178, 21.620, 22.061, 22.503, 
+            22.944, 23.385, 23.827, 24.268
+        ];
 
-        // Efeitos Sonoros Dinâmicos para cliques (Web Audio API)
-        const playSfx = (type) => {
-            try {
-                const ctx = new (window.AudioContext || window.webkitAudioContext)();
-                const osc = ctx.createOscillator();
-                const gain = ctx.createGain();
-                osc.connect(gain);
-                gain.connect(ctx.destination);
-                
-                if (type === 'hover') {
-                    osc.frequency.setValueAtTime(180, ctx.currentTime);
-                    osc.frequency.exponentialRampToValueAtTime(280, ctx.currentTime + 0.12);
-                    gain.gain.setValueAtTime(0.01, ctx.currentTime);
-                    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
-                    osc.start();
-                    osc.stop(ctx.currentTime + 0.12);
-                } else if (type === 'click') {
-                    osc.frequency.setValueAtTime(140, ctx.currentTime);
-                    osc.frequency.exponentialRampToValueAtTime(380, ctx.currentTime + 0.2);
-                    gain.gain.setValueAtTime(0.04, ctx.currentTime);
-                    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2);
-                    osc.start();
-                    osc.stop(ctx.currentTime + 0.2);
-                }
-            } catch (e) { /* Fallback silencioso se bloqueado */ }
-        };
+        // Mapear cada batida para uma tecla alvo de forma sequencial harmônica (Teclas 1, 2, 3)
+        const targetKeys = beatTimestamps.map((_, idx) => (idx % 3) + 1);
 
-        // Elementos e Estado Global
-        const canvas = document.getElementById('cosmicCanvas');
+        // Estado do Jogo
+        let isPlaying = false;
+        let isPausedByMiss = false;
+        let currentBeatIndex = 0;
+        let comboStreak = 0;
+        let isHitSuccess = false;
+        let lastTime = 0;
+
+        // Elementos da página
+        const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         const musicPlayer = document.getElementById('musicPlayer');
-        
-        let isPlaying = false;
-        let colorHue = 270; // Matiz inicial (Roxo Cósmico)
-        let colorPulse = 0; // Pulsação constante de cor
-        let intensityPulse = 0; // Controla pulsação da luz ambiente
-        
+
+        // Web Audio API: Gráfico de DSP para Reverb + Echo de 10 segundos
+        let audioCtx, audioSource, dryGain, wetGain, delayNode, feedbackGain, convolver;
+
+        function setupAudioGraph() {
+            if (audioCtx) return; // Já configurado
+
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            audioSource = audioCtx.createMediaElementSource(musicPlayer);
+
+            dryGain = audioCtx.createGain();
+            wetGain = audioCtx.createGain();
+
+            // Configurar Delay (Eco)
+            delayNode = audioCtx.createDelay(2.0);
+            delayNode.delayTime.value = 0.35; // Tempo do eco (350ms)
+            feedbackGain = audioCtx.createGain();
+            feedbackGain.gain.value = 0.55; // Intensidade do feedback de eco
+
+            // Configurar Reverb Sintetizado de Longo Decaimento (Para evitar arquivos externos)
+            convolver = audioCtx.createConvolver();
+            const rate = audioCtx.sampleRate;
+            const len = rate * 4.0; // 4 segundos de cauda de reverb
+            const impulse = audioCtx.createBuffer(2, len, rate);
+            const left = impulse.getChannelData(0);
+            const right = impulse.getChannelData(1);
+            for (let i = 0; i < len; i++) {
+                const decay = Math.exp(-i / (rate * 0.8));
+                left[i] = (Math.random() * 2 - 1) * decay;
+                right[i] = (Math.random() * 2 - 1) * decay;
+            }
+            convolver.buffer = impulse;
+
+            // Roteamento de Sinal
+            audioSource.connect(dryGain);
+            audioSource.connect(delayNode);
+
+            // Loop de Feedback do Eco
+            delayNode.connect(feedbackGain);
+            feedbackGain.connect(delayNode);
+
+            // Conectar o Eco ao Reverb
+            delayNode.connect(convolver);
+            convolver.connect(wetGain);
+
+            // Conectar saídas ao destino final (Altifalantes)
+            dryGain.connect(audioCtx.destination);
+            wetGain.connect(audioCtx.destination);
+
+            // Estado inicial: Som direto ligado, efeito mudo
+            dryGain.gain.setValueAtTime(1.0, audioCtx.currentTime);
+            wetGain.gain.setValueAtTime(0.0, audioCtx.currentTime);
+        }
+
+        // --- SISTEMAS DE RENDERIZAÇÃO DO CANVAS (GLITTER E NOTAS) ---
         let particles = [];
-        const maxParticles = 1200; // Quantidade de glitter ultra fina e detalhada
-        const mouse = { x: null, y: null, px: null, py: null, vx: 0, vy: 0, down: false };
+        let orb = { x: 0, y: 0, targetX: 0, targetY: 0, currentKey: 1, progress: 0 };
+        const keyPositions = [
+            { id: 1, label: "1", color: "#a855f7", glow: "rgba(168,85,247,0.4)" }, // Roxo
+            { id: 2, label: "2", color: "#3b82f6", glow: "rgba(59,130,246,0.4)" },  // Azul
+            { id: 3, label: "3", color: "#ec4899", glow: "rgba(236,72,153,0.4)" }   // Rosa
+        ];
 
-        // Variáveis de ondas de áudio espectrais simuladas
-        let spectrumBands = [];
-        const numBands = 180; // Detalhe fino de barras do espectro
-
-        // Ajuste dinâmico de tamanho do Canvas
-        function resize() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-            initParticles();
-            initSpectrum();
-        }
-
-        // Inicializa o Audio Spectrum (barras de frequência)
-        function initSpectrum() {
-            spectrumBands = [];
-            for (let i = 0; i < numBands; i++) {
-                spectrumBands.push({
-                    x: (canvas.width / numBands) * i,
-                    targetHeight: 5,
-                    currentHeight: 5,
-                    phase: Math.random() * Math.PI * 2,
-                    speed: 0.05 + Math.random() * 0.08
-                });
+        // Partícula de Glitter Cósmico
+        class GlitterSparkle {
+            constructor(x, y, color) {
+                this.x = x;
+                this.y = y;
+                this.vx = (Math.random() - 0.5) * 8;
+                this.vy = (Math.random() - 0.5) * 8 - 2;
+                this.size = Math.random() * 2.5 + 0.8;
+                this.alpha = 1.0;
+                this.decay = Math.random() * 0.02 + 0.01;
+                this.color = color;
             }
-        }
-
-        // Definição da Partícula de Glitter Cósmico (Fina, brilhante e detalhada)
-        class GlitterParticle {
-            constructor() {
-                this.reset(true);
-            }
-
-            reset(init = false) {
-                // Se for clique ou movimento, nascem exatamente embaixo do mouse
-                if (!init && mouse.x !== null) {
-                    this.x = mouse.x + (Math.random() - 0.5) * 15;
-                    this.y = mouse.y + (Math.random() - 0.5) * 15;
-                    // Velocidade explosiva ao nascer a partir do cursor
-                    this.vx = (Math.random() - 0.5) * 10 + mouse.vx * 0.5;
-                    this.vy = (Math.random() - 0.5) * 10 + mouse.vy * 0.5;
-                } else {
-                    this.x = Math.random() * canvas.width;
-                    this.y = Math.random() * canvas.height;
-                    this.vx = (Math.random() - 0.5) * 1.5;
-                    this.vy = (Math.random() - 0.5) * 1.5;
-                }
-                
-                // Tamanhos minúsculos para dar o efeito de Glitter bem fino e brilhante
-                this.size = Math.random() * 1.6 + 0.4;
-                this.alpha = Math.random() * 0.8 + 0.2;
-                this.decay = Math.random() * 0.006 + 0.002;
-                this.hueOffset = Math.random() * 90;
-                
-                // Frequência de cintilação (glitter pisca rápido)
-                this.twinkleSpeed = 0.08 + Math.random() * 0.12;
-                this.twinklePhase = Math.random() * Math.PI;
-            }
-
             update() {
-                // SÓ INTERAGE se a música estiver ativa E o mouse pressionado
-                if (isPlaying && mouse.down && mouse.x !== null) {
-                    let dx = mouse.x - this.x;
-                    let dy = mouse.y - this.y;
-                    let dist = Math.sqrt(dx * dx + dy * dy);
-                    let radius = 300; // Raio gravitacional do cursor
-
-                    if (dist < radius) {
-                        let force = (radius - dist) / radius;
-                        
-                        // Efeito de redemoinho gravitacional fino e rápido em volta do mouse
-                        let orbitX = (dy / dist) * force * 5;
-                        let orbitY = (-dx / dist) * force * 5;
-
-                        // Adiciona vento e inércia instantânea com o movimento do mouse
-                        let dragX = mouse.vx * force * 1.2;
-                        let dragY = mouse.vy * force * 1.2;
-
-                        this.vx += orbitX + dragX;
-                        this.vy += orbitY + dragY;
-                    }
-                }
-
-                // Aplica atrito suave (Garante que o glitter se mova de forma lisa e elegante)
-                this.vx *= 0.94;
-                this.vy *= 0.94;
-
+                this.vx *= 0.96;
+                this.vy *= 0.96;
                 this.x += this.vx;
                 this.y += this.vy;
-
-                // REBATE NAS BORDAS DO MONITOR E VOLTA (Física de rebote clássica com conservação de energia!)
-                if (this.x < 0) {
-                    this.x = 0;
-                    this.vx *= -0.9;
-                } else if (this.x > canvas.width) {
-                    this.x = canvas.width;
-                    this.vx *= -0.9;
-                }
-
-                if (this.y < 0) {
-                    this.y = 0;
-                    this.vy *= -0.9;
-                } else if (this.y > canvas.height) {
-                    this.y = canvas.height;
-                    this.vy *= -0.9;
-                }
-
-                // Esmaecimento gradual e respawn
                 this.alpha -= this.decay;
-                if (this.alpha <= 0) {
-                    this.reset(false);
-                }
+                
+                // Rebota nas bordas da tela
+                if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
+                if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
             }
-
             draw() {
-                if (this.alpha <= 0) return;
-
                 ctx.save();
                 ctx.globalCompositeOperation = "screen";
-
-                // Efeito cintilante (twinkle) multiplicando a opacidade senoidalmente
-                let twinkle = Math.abs(Math.sin(Date.now() * this.twinkleSpeed + this.twinklePhase));
-                let hue = Math.floor(colorPulse + this.hueOffset) % 360;
-
-                // Estilo Glitter: Pontos minúsculos com brilho neon intenso
-                ctx.shadowBlur = this.size * 6;
-                ctx.shadowColor = `hsla(${hue}, 100%, 65%, ${this.alpha * twinkle})`;
-                ctx.fillStyle = `hsla(${(hue - 20) % 360}, 100%, 85%, ${this.alpha * twinkle})`;
-
+                ctx.globalAlpha = this.alpha;
+                ctx.shadowBlur = this.size * 5;
+                ctx.shadowColor = this.color;
+                ctx.fillStyle = "#ffffff";
                 ctx.beginPath();
                 ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
                 ctx.fill();
@@ -326,234 +231,312 @@
             }
         }
 
-        // Inicializador de glitter
-        function initParticles() {
-            particles = [];
-            for (let i = 0; i < maxParticles; i++) {
-                let p = new GlitterParticle();
-                particles.push(p);
-            }
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
         }
 
-        // Atualização e Desenho do Audio Spectrum Fino e Detalhado
-        function drawSpectrum() {
-            ctx.save();
-            ctx.globalCompositeOperation = "screen";
+        // Desenha as teclas virtuais de piano na base
+        function drawVirtualKeys() {
+            const keyWidth = Math.min(160, canvas.width / 5);
+            const keyHeight = 70;
+            const spacing = 35;
+            const startX = (canvas.width - (keyWidth * 3 + spacing * 2)) / 2;
+            const y = canvas.height - 150;
 
-            for (let i = 0; i < spectrumBands.length; i++) {
-                let band = spectrumBands[i];
+            keyPositions.forEach((kp, idx) => {
+                const x = startX + idx * (keyWidth + spacing);
+                kp.currentX = x + keyWidth / 2;
+                kp.currentY = y + keyHeight / 2;
+                kp.width = keyWidth;
+                kp.height = keyHeight;
 
-                if (isPlaying) {
-                    // Calcula flutuação de frequência rítmica baseada na música ativa
-                    band.phase += band.speed;
-                    let audioWave = Math.sin(band.phase) * Math.cos(band.phase * 0.5) * 110;
-                    
-                    // Se o mouse estiver pressionado por perto, as frequências se curvam em direção ao cursor
-                    if (mouse.down && mouse.x !== null) {
-                        let distToMouse = Math.abs(band.x - mouse.x);
-                        if (distToMouse < 200) {
-                            let bend = (200 - distToMouse) / 200;
-                            // Distorce a altura em direção ao mouse criando ondas e distorções
-                            audioWave += (mouse.y - (canvas.height - 120)) * bend * 0.9;
-                        }
-                    }
-
-                    // Força a transição suave de altura da barra
-                    band.targetHeight = Math.max(8, Math.abs(audioWave));
+                // Tecla pisca suave se for o alvo atual do ritmo
+                const isTarget = isPlaying && currentBeatIndex < beatTimestamps.length && targetKeys[currentBeatIndex] === kp.id;
+                
+                ctx.save();
+                if (isTarget) {
+                    // Efeito de luz neon piscando em slow motion
+                    const pulse = Math.abs(Math.sin(Date.now() * 0.008)) * 0.6 + 0.4;
+                    ctx.shadowBlur = 25 * pulse;
+                    ctx.shadowColor = kp.color;
+                    ctx.strokeStyle = kp.color;
+                    ctx.fillStyle = `rgba(255,255,255,${0.08 * pulse})`;
                 } else {
-                    // Espectro dormente (linhas finas e planas)
-                    band.targetHeight = 4;
+                    ctx.shadowBlur = 5;
+                    ctx.shadowColor = "rgba(255,255,255,0.05)";
+                    ctx.strokeStyle = "rgba(255,255,255,0.15)";
+                    ctx.fillStyle = "rgba(255,255,255,0.02)";
                 }
 
-                band.currentHeight += (band.targetHeight - band.currentHeight) * 0.15;
-
-                // Desenha o espectro como micro barras finas e detalhadas compostas de glitter
-                let hue = Math.floor(colorPulse + (i * 1.5)) % 360;
-                ctx.shadowBlur = isPlaying ? 10 : 0;
-                ctx.shadowColor = `hsla(${hue}, 100%, 60%, 0.8)`;
-                ctx.fillStyle = isPlaying ? `hsla(${hue}, 100%, 75%, 0.9)` : "rgba(100, 116, 139, 0.4)";
-
-                // Desenha barras subindo de forma simétrica do rodapé
-                let barWidth = (canvas.width / numBands) * 0.7;
-                let barHeight = band.currentHeight;
-                let barY = canvas.height - barHeight - 40;
-
+                // Desenhar a tecla arredondada
                 ctx.beginPath();
-                ctx.roundRect(band.x, barY, barWidth, barHeight, 2);
+                ctx.roundRect(x, y, keyWidth, keyHeight, 14);
                 ctx.fill();
+                ctx.stroke();
+
+                // Rótulo da tecla (1, 2, 3)
+                ctx.fillStyle = isTarget ? "#ffffff" : "rgba(255,255,255,0.6)";
+                ctx.font = "bold 20px 'Space Grotesk', sans-serif";
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.fillText(kp.label, x + keyWidth / 2, y + keyHeight / 2);
+                ctx.restore();
+            });
+        }
+
+        // Desenha a esfera voadora e seu rastro
+        function updateAndDrawOrb(time) {
+            if (!isPlaying || currentBeatIndex >= beatTimestamps.length) return;
+
+            const nextBeatTime = beatTimestamps[currentBeatIndex];
+            const targetKeyId = targetKeys[currentBeatIndex];
+            const targetKey = keyPositions.find(k => k.id === targetKeyId);
+
+            if (!targetKey) return;
+
+            // Posição de origem da esfera (foco central superior)
+            const originX = canvas.width / 2;
+            const originY = 120;
+
+            // Calcula o progresso do mergulho (janela de 0.6 segundos antes da batida)
+            const startTime = nextBeatTime - 0.6;
+            const duration = 0.6;
+            const progress = Math.min(1, Math.max(0, (time - startTime) / duration));
+
+            // Interpolação suave de voo (Curva de arco)
+            orb.x = originX + (targetKey.currentX - originX) * progress;
+            // Efeito de parábola de mergulho
+            const arcY = Math.sin(progress * Math.PI) * 120;
+            orb.y = originY + (targetKey.currentY - originY) * progress - arcY;
+
+            // Libera partículas de glitter sutil constantemente ao longo do rastro
+            if (progress > 0 && progress < 1 && Math.random() > 0.3) {
+                particles.push(new GlitterSparkle(orb.x, orb.y, targetKey.color));
             }
+
+            // Desenha a Esfera de Energia
+            ctx.save();
+            ctx.globalCompositeOperation = "screen";
+            const glowSize = 14 + Math.sin(Date.now() * 0.01) * 4;
+            ctx.shadowBlur = glowSize;
+            ctx.shadowColor = targetKey.color;
+            ctx.fillStyle = "#ffffff";
+            ctx.beginPath();
+            ctx.arc(orb.x, orb.y, 8, 0, Math.PI * 2);
+            ctx.fill();
             ctx.restore();
         }
 
-        // Loop de Renderização Principal
+        // --- SISTEMA DE FLUXO E LOOP DO JOGO ---
         function animate() {
-            // Efeito de rastro leve para manter as caudas brilhantes de glitter suaves
+            // Rastro persistente para suavizar a luz de glitter
             ctx.fillStyle = "rgba(1, 1, 3, 0.15)";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            if (isPlaying) {
-                colorHue = (colorHue + 0.15) % 360;
-                colorPulse = (colorPulse + 0.45) % 360; // Pulsação de cor constante
-                intensityPulse = Math.sin(Date.now() * 0.003) * 0.15 + 0.85;
+            const currentTime = musicPlayer.currentTime;
 
-                // Desenha um brilho de luz de neon ambiente sutil no fundo
-                drawGlobalAmbientGlow();
-            }
+            // Desenha Teclas e Esfera
+            drawVirtualKeys();
+            updateAndDrawOrb(currentTime);
 
-            // Atualiza e desenha Audio Spectrum
-            drawSpectrum();
-
-            // Atualiza e desenha fumaças de glitter
-            for (let i = 0; i < particles.length; i++) {
+            // Atualiza e desenha partículas de glitter
+            for (let i = particles.length - 1; i >= 0; i--) {
                 particles[i].update();
                 particles[i].draw();
+                if (particles[i].alpha <= 0) {
+                    particles.splice(i, 1);
+                }
             }
 
-            // Reduz inércia residual da velocidade registrada do mouse
-            mouse.vx *= 0.92;
-            mouse.vy *= 0.92;
+            // --- LÓGICA DE DETECÇÃO DE RITMO EM TEMPO REAL ---
+            if (isPlaying && !isPausedByMiss && currentBeatIndex < beatTimestamps.length) {
+                const nextBeat = beatTimestamps[currentBeatIndex];
+
+                // Se passou do tempo do beat e o jogador NÃO acertou a nota
+                if (currentTime >= nextBeat - 0.04) {
+                    if (isHitSuccess) {
+                        // Sucesso: Esfera explode com impacto de glitter na nota
+                        const targetKey = keyPositions.find(k => k.id === targetKeys[currentBeatIndex]);
+                        triggerHitExplosion(targetKey.currentX, targetKey.currentY, targetKey.color);
+                        
+                        isHitSuccess = false;
+                        currentBeatIndex++;
+                        comboStreak++;
+                        document.getElementById('streakCounter').innerText = `COMBO: ${comboStreak}`;
+                    } else {
+                        // Falhou ou demorou muito: PAUSA INSTANTÂNEA com efeito reverb/eco
+                        triggerMissPause();
+                    }
+                }
+            }
 
             requestAnimationFrame(animate);
         }
 
-        // Desenha clarão de luz de neon ambiente pulsante que ocupa a tela
-        function drawGlobalAmbientGlow() {
-            ctx.save();
-            ctx.globalCompositeOperation = "screen";
-            let centerGlow = ctx.createRadialGradient(
-                canvas.width / 2, canvas.height / 2, 10,
-                canvas.width / 2, canvas.height / 2, Math.max(canvas.width, canvas.height) * 0.8
-            );
-            centerGlow.addColorStop(0, `hsla(${colorHue}, 95%, 45%, ${0.05 * intensityPulse})`);
-            centerGlow.addColorStop(1, "transparent");
-            ctx.fillStyle = centerGlow;
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.restore();
+        // Dispara explosão brilhante ao acertar nota
+        function triggerHitExplosion(x, y, color) {
+            for (let i = 0; i < 40; i++) {
+                particles.push(new GlitterSparkle(x, y, color));
+            }
         }
 
-        // Rastreamento dinâmico do clique e arrasto
-        window.addEventListener('mousedown', () => {
-            if (isPlaying) {
-                mouse.down = true;
-                // Dispara efeito sonoro do clique de espectro
-                playSfx('click');
+        // Pausa o jogo instantaneamente aplicando Reverb e Eco
+        function triggerMissPause() {
+            isPausedByMiss = true;
+            comboStreak = 0;
+            document.getElementById('streakCounter').innerText = `COMBO: ${comboStreak}`;
+            
+            // Alterar o HUD para estado suspenso
+            document.getElementById('gameStatusIndicator').className = "h-2 w-2 rounded-full bg-red-500 animate-pulse";
+            document.getElementById('gameStatusText').innerText = "SUSPENSO (AGUARDANDO NOTA)";
+
+            // Ativa o sinal de efeito Reverb + Eco no Web Audio
+            wetGain.gain.cancelScheduledValues(audioCtx.currentTime);
+            dryGain.gain.cancelScheduledValues(audioCtx.currentTime);
+
+            // Corta o áudio seco imediatamente
+            dryGain.gain.setValueAtTime(0.0, audioCtx.currentTime);
+            // Liga o efeito espacial com intensidade máxima
+            wetGain.gain.setValueAtTime(1.0, audioCtx.currentTime);
+
+            // Permite que o último milissegundo de áudio alimente o eco, depois pausa o player após 50ms
+            setTimeout(() => {
+                if (isPausedByMiss) {
+                    musicPlayer.pause();
+                }
+            }, 50);
+
+            // Agenda o decaimento gradual do eco por 10 segundos
+            wetGain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 10.0);
+        }
+
+        // Restaura a música continuamente após pressionar a nota correta
+        function resumeSinfonia() {
+            if (!isPausedByMiss) return;
+
+            setupAudioGraph();
+            audioCtx.resume();
+
+            // Restaura o som direto (dry) e desliga o efeito wet
+            wetGain.gain.cancelScheduledValues(audioCtx.currentTime);
+            dryGain.gain.cancelScheduledValues(audioCtx.currentTime);
+            dryGain.gain.setValueAtTime(1.0, audioCtx.currentTime);
+            wetGain.gain.setValueAtTime(0.0, audioCtx.currentTime);
+
+            // Retoma a música exatamente do início do beat
+            isPausedByMiss = false;
+            isHitSuccess = true; // Seta como sucesso para a transição
+            
+            // Corrige o tempo de reprodução para o beat atual de forma limpa
+            musicPlayer.currentTime = beatTimestamps[currentBeatIndex];
+            musicPlayer.play();
+
+            // Retorna o HUD para estado ativo
+            document.getElementById('gameStatusIndicator').className = "h-2 w-2 rounded-full bg-emerald-500 animate-pulse";
+            document.getElementById('gameStatusText').innerText = "EM SINTONIA";
+        }
+
+        // --- SISTEMAS DE ENTRADA DO JOGADOR ---
+        function handleKeyTrigger(keyId) {
+            if (!isPlaying) return;
+
+            // Se o jogo está suspenso esperando pela nota atual
+            if (isPausedByMiss) {
+                const requiredKey = targetKeys[currentBeatIndex];
+                if (keyId === requiredKey) {
+                    resumeSinfonia();
+                } else {
+                    playSfx('click'); // Som de erro
+                }
+            } else {
+                // Durante a gameplay ativa
+                const requiredKey = targetKeys[currentBeatIndex];
+                const currentTime = musicPlayer.currentTime;
+                const nextBeat = beatTimestamps[currentBeatIndex];
+
+                // Permite o acerto apenas se estiver na janela de ação de 0.6s
+                if (keyId === requiredKey && currentTime >= (nextBeat - 0.6) && currentTime <= nextBeat) {
+                    isHitSuccess = true;
+                } else {
+                    playSfx('click');
+                }
             }
+        }
+
+        // Entrada física de teclado
+        window.addEventListener('keydown', (e) => {
+            if (e.key === '1') handleKeyTrigger(1);
+            if (e.key === '2') handleKeyTrigger(2);
+            if (e.key === '3') handleKeyTrigger(3);
         });
 
-        window.addEventListener('mouseup', () => {
-            mouse.down = false;
+        // Entrada por clique na tela (Dividido em 3 colunas de toque)
+        window.addEventListener('mousedown', (e) => {
+            if (!isPlaying) return;
+
+            // Divide a largura da tela em 3 áreas de clique
+            const sector = Math.floor((e.clientX / window.innerWidth) * 3) + 1;
+            handleKeyTrigger(sector);
         });
 
-        window.addEventListener('mousemove', (e) => {
-            if (mouse.x !== null && mouse.y !== null) {
-                mouse.vx = e.clientX - mouse.x;
-                mouse.vy = e.clientY - mouse.y;
-            }
-            mouse.x = e.clientX;
-            mouse.y = e.clientY;
-        });
-
-        window.addEventListener('mouseout', () => {
-            mouse.x = null;
-            mouse.y = null;
-            mouse.vx = 0;
-            mouse.vy = 0;
-            mouse.down = false;
-        });
-
-        // Configuração Inicial de Execução
-        window.addEventListener('resize', resize);
-        resize();
-        animate();
-
-        // ================= FLUXO DINÂMICO DE MÚSICA & INTERFACE =================
-
-        function selectTrack(fileName, trackName, buttonId) {
+        // --- CONTROLES DE INICIALIZAÇÃO E FLUXO ---
+        function initGame() {
             playSfx('click');
+            
+            // Oculta tela inicial
+            const startScr = document.getElementById('startScreen');
+            startScr.classList.add('opacity-0', 'scale-95', 'pointer-events-none');
+            setTimeout(() => startScr.classList.add('hidden'), 800);
 
-            // Troca o arquivo de áudio e reproduz
-            musicPlayer.src = fileName;
-            musicPlayer.play().then(() => {
-                isPlaying = true;
-                
-                // Atualiza textos
-                document.getElementById('nowPlayingText').innerText = trackName.toUpperCase();
-                document.getElementById('statusIndicator').className = "h-2 w-2 rounded-full bg-emerald-500 animate-pulse";
-                document.getElementById('statusText').innerText = "ESPECTRO TOTALMENTE REATIVO SINTONIZADO";
+            // Revela interface de jogo
+            const gameUI = document.getElementById('gameUI');
+            gameUI.classList.remove('hidden');
+            setTimeout(() => {
+                gameUI.classList.remove('opacity-0', 'pointer-events-none');
+                gameUI.classList.add('opacity-100');
+            }, 200);
 
-                // Inicia transição e esconde todos os componentes de interface para liberar o desenho livre
-                toggleInterface(true);
-            }).catch(err => {
-                console.warn("Autoplay rejeitado pelo navegador.", err);
-                isPlaying = false;
-            });
+            // Ativa Web Audio API e inicia áudio
+            setupAudioGraph();
+            audioCtx.resume();
+            
+            isPlaying = true;
+            isPausedByMiss = false;
+            isHitSuccess = false;
+            currentBeatIndex = 0;
+            comboStreak = 0;
+            musicPlayer.currentTime = 0;
+            musicPlayer.play();
         }
 
-        function pauseMusic() {
+        function pauseAndExit() {
             playSfx('click');
             musicPlayer.pause();
             isPlaying = false;
-            mouse.down = false;
+            isPausedByMiss = false;
 
-            // Restaura textos padrão
-            document.getElementById('nowPlayingText').innerText = "NENHUMA FAIXA ATIVA";
-            document.getElementById('statusIndicator').className = "h-2 w-2 rounded-full bg-red-500 animate-pulse";
-            document.getElementById('statusText').innerText = "SINFONIA INATIVA (SELECIONE UMA MÚSICA)";
+            // Restaura tela inicial
+            const startScr = document.getElementById('startScreen');
+            startScr.classList.remove('hidden');
+            setTimeout(() => startScr.classList.remove('opacity-0', 'scale-95', 'pointer-events-none'), 50);
 
-            // Restaura componentes de interface originais
-            toggleInterface(false);
+            // Oculta interface de jogo
+            const gameUI = document.getElementById('gameUI');
+            gameUI.classList.remove('opacity-100');
+            gameUI.classList.add('opacity-0', 'pointer-events-none');
+            setTimeout(() => gameUI.classList.add('hidden'), 800);
         }
-
-        // Monitor de encerramento da música (Quando a música acaba, a interface retorna automaticamente)
-        musicPlayer.addEventListener('ended', () => {
-            isPlaying = false;
-            mouse.down = false;
-            document.getElementById('nowPlayingText').innerText = "NENHUMA FAIXA ATIVA";
-            document.getElementById('statusIndicator').className = "h-2 w-2 rounded-full bg-red-500 animate-pulse";
-            document.getElementById('statusText').innerText = "SINFONIA INATIVA (SELECIONE UMA MÚSICA)";
-            toggleInterface(false);
-        });
 
         // Ajuste de Volume
         function setVolume(value) {
             musicPlayer.volume = value / 100;
         }
 
-        // Função responsável por ocultar/revelar elementos com transição fluida
-        function toggleInterface(hide) {
-            const uiTitle = document.getElementById('uiTitle');
-            const playerCard = document.getElementById('playerCard');
-            const uiHeader = document.getElementById('uiHeader');
-            const stopBtnContainer = document.getElementById('stopButtonContainer');
-
-            if (hide) {
-                // Esconde interface de forma extremamente suave
-                uiTitle.classList.add('opacity-0', 'scale-95', 'pointer-events-none');
-                playerCard.classList.add('opacity-0', 'scale-95', 'pointer-events-none');
-                uiHeader.classList.add('opacity-0', 'pointer-events-none');
-
-                // Revela apenas o botão futurista de parar música no rodapé
-                setTimeout(() => {
-                    stopBtnContainer.classList.remove('hidden');
-                    setTimeout(() => {
-                        stopBtnContainer.classList.remove('opacity-0', 'scale-90');
-                        stopBtnContainer.classList.add('opacity-100', 'scale-100');
-                    }, 50);
-                }, 400);
-            } else {
-                // Esconde botão de parar música
-                stopBtnContainer.classList.remove('opacity-100', 'scale-100');
-                stopBtnContainer.classList.add('opacity-0', 'scale-90');
-                setTimeout(() => {
-                    stopBtnContainer.classList.add('hidden');
-                    
-                    // Restaura interface principal completa
-                    uiTitle.classList.remove('opacity-0', 'scale-95', 'pointer-events-none');
-                    playerCard.classList.remove('opacity-0', 'scale-95', 'pointer-events-none');
-                    uiHeader.classList.remove('opacity-0', 'pointer-events-none');
-                }, 400);
-            }
-        }
+        // Loop de animação ativo
+        window.addEventListener('resize', resize);
+        resize();
+        animate();
     </script>
 </body>
 </html>
