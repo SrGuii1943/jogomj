@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cosmic Odyssey - Menu Principal</title>
+    <title>Cosmic Soundwave - Menu Principal</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Google Fonts: Cinzel (Celestial) e Space Grotesk (Tech) -->
@@ -45,8 +45,8 @@
         }
         /* Animação de pulsar do player */
         @keyframes orbitPulse {
-            0%, 100% { box-shadow: 0 0 15px rgba(59, 130, 246, 0.15); }
-            50% { box-shadow: 0 0 35px rgba(147, 51, 234, 0.35); }
+            0%, 100% { box-shadow: 0 0 15px rgba(168, 85, 247, 0.15); }
+            50% { box-shadow: 0 0 35px rgba(59, 130, 246, 0.35); }
         }
         .active-player {
             animation: orbitPulse 4s infinite ease-in-out;
@@ -63,13 +63,18 @@
     <!-- CANVAS DE FLUIDOS E PARTÍCULAS NEON -->
     <canvas id="cosmicCanvas" class="absolute inset-0 z-0 bg-[#020205]"></canvas>
 
+    <!-- HUD FLUTUANTE DE EFEITOS (Mostra qual dos 32 efeitos está ativo ao clicar) -->
+    <div id="effectIndicator" class="fixed top-6 left-1/2 -translate-x-1/2 px-5 py-2.5 rounded-full border border-purple-500/30 bg-black/85 text-purple-300 font-bold text-xs tracking-[0.2em] uppercase opacity-0 scale-90 pointer-events-none transition-all duration-500 z-50 shadow-[0_0_25px_rgba(168,85,247,0.3)]">
+        EFEITO SELECIONADO: MAGNETISMO
+    </div>
+
     <!-- Overlay de vinheta para realçar o brilho das luzes no centro -->
     <div class="absolute inset-0 bg-radial-gradient from-transparent via-[#020205]/40 to-[#020205] z-[1] pointer-events-none"></div>
 
     <!-- ELEMENTO DE ÁUDIO -->
     <audio id="musicPlayer" loop></audio>
 
-    <!-- INTERFACE DO USUÁRIO (Tudo envelopado para controle de fade/visibilidade) -->
+    <!-- INTERFACE DO USUÁRIO -->
     <div class="relative z-10 w-full h-full flex flex-col justify-between p-6 md:p-12 pointer-events-none select-none">
         
         <!-- TOPO: Indicador de status dinâmico -->
@@ -110,19 +115,19 @@
 
                     <!-- Lista Completa das 4 Faixas -->
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                        <button onclick="selectTrack('beatmj.mp3', 'Beat It - MJ', 'btn-beat')" id="btn-beat" class="btn-celestial py-3 px-4 rounded-xl text-xs tracking-wider font-medium text-left flex items-center justify-between hover:text-white text-slate-400">
+                        <button onclick="selectTrack('beatmj.mp3', 'Beat It - MJ', 'btn-beat')" id="btn-beat" class="btn-celestial py-3.5 px-4 rounded-xl text-xs tracking-wider font-medium text-left flex items-center justify-between hover:text-white text-slate-400">
                             <span class="truncate">1. Beat It</span>
                             <i data-lucide="play" class="w-3.5 h-3.5 text-slate-500"></i>
                         </button>
-                        <button onclick="selectTrack('billiemj.mp3', 'Billie Jean - MJ', 'btn-billie')" id="btn-billie" class="btn-celestial py-3 px-4 rounded-xl text-xs tracking-wider font-medium text-left flex items-center justify-between hover:text-white text-slate-400">
+                        <button onclick="selectTrack('billiemj.mp3', 'Billie Jean - MJ', 'btn-billie')" id="btn-billie" class="btn-celestial py-3.5 px-4 rounded-xl text-xs tracking-wider font-medium text-left flex items-center justify-between hover:text-white text-slate-400">
                             <span class="truncate">2. Billie Jean</span>
                             <i data-lucide="play" class="w-3.5 h-3.5 text-slate-500"></i>
                         </button>
-                        <button onclick="selectTrack('badmj.mp3', 'Bad - MJ', 'btn-bad')" id="btn-bad" class="btn-celestial py-3 px-4 rounded-xl text-xs tracking-wider font-medium text-left flex items-center justify-between hover:text-white text-slate-400">
+                        <button onclick="selectTrack('badmj.mp3', 'Bad - MJ', 'btn-bad')" id="btn-bad" class="btn-celestial py-3.5 px-4 rounded-xl text-xs tracking-wider font-medium text-left flex items-center justify-between hover:text-white text-slate-400">
                             <span class="truncate">3. Bad</span>
                             <i data-lucide="play" class="w-3.5 h-3.5 text-slate-500"></i>
                         </button>
-                        <button onclick="selectTrack('olodummj.mp3', 'They Don\'t Care (Olodum)', 'btn-olodum')" id="btn-olodum" class="btn-celestial py-3 px-4 rounded-xl text-xs tracking-wider font-medium text-left flex items-center justify-between hover:text-white text-slate-400">
+                        <button onclick="selectTrack('olodummj.mp3', 'They Don\'t Care (Olodum)', 'btn-olodum')" id="btn-olodum" class="btn-celestial py-3.5 px-4 rounded-xl text-xs tracking-wider font-medium text-left flex items-center justify-between hover:text-white text-slate-400">
                             <span class="truncate">4. Olodum Mix</span>
                             <i data-lucide="play" class="w-3.5 h-3.5 text-slate-500"></i>
                         </button>
@@ -184,12 +189,25 @@
         
         let isPlaying = false;
         let colorHue = 240; // Matiz inicial (Azul/Roxo)
-        let colorPulse = 0; // DECLARAÇÃO DA VARIÁVEL DE PULSAÇÃO DE COR DAS PARTÍCULAS
+        let colorPulse = 0; // Declaração da variável de pulsação de cor das partículas
         let intensityPulse = 0; // Controla pulsação da luz de neon
         
         let particles = [];
-        const maxParticles = 650; // Quantidade ideal para não travar sob nenhuma circunstância
-        const mouse = { x: null, y: null, px: null, py: null, vx: 0, vy: 0, active: false };
+        const maxParticles = 800; // Aumentado ligeiramente para maior densidade de fumaça, ainda 100% fluído
+        const mouse = { x: null, y: null, px: null, py: null, vx: 0, vy: 0, down: false };
+
+        // Nomes dos 32 Efeitos Físicos Diferentes que serão selecionados aleatoriamente ao clicar e arrastar
+        const effectNames = [
+            "Magnetismo Reverso", "Atração Gravitacional", "Vórtice de Andrômeda", "Ciclone Espacial",
+            "Onda de Choque", "Vento Solar Turbulento", "Buraco Negro Estelar", "RGB Quantum Split",
+            "Dobra Dimensional", "Fagulhas de Antimatéria", "Expansão Cosmológica", "Gravidade Quântica",
+            "Fluxo Caótico", "Aurora Estelar", "Pulsação de Supernova", "Anéis de Saturno",
+            "Congelamento Temporal", "Rede de Neutrinos", "Rastro de Cometa", "Vento Galáctico",
+            "Inversão Espacial", "Super-Gravidade", "Onda Senoidal Térmica", "Turbulência de Plasma",
+            "Refração Espelho", "Fricção Energética", "Propulsão de Quasar", "Pó de Diamante",
+            "Hiper-Velocidade Warp", "Elasticidade de Supercordas", "Vórtice Escuro", "Reflexão Dimensional"
+        ];
+        let currentEffectIndex = 0;
 
         // Ajuste dinâmico de tamanho do Canvas
         function resize() {
@@ -205,65 +223,210 @@
             }
 
             reset(init = false) {
-                this.x = init ? Math.random() * canvas.width : (mouse.x !== null ? mouse.x + (Math.random() - 0.5) * 50 : Math.random() * canvas.width);
-                this.y = init ? Math.random() * canvas.height : (mouse.y !== null ? mouse.y + (Math.random() - 0.5) * 50 : Math.random() * canvas.height);
+                this.x = init ? Math.random() * canvas.width : (mouse.x !== null ? mouse.x + (Math.random() - 0.5) * 60 : Math.random() * canvas.width);
+                this.y = init ? Math.random() * canvas.height : (mouse.y !== null ? mouse.y + (Math.random() - 0.5) * 60 : Math.random() * canvas.height);
                 
-                // Vetores de velocidade
-                this.vx = (Math.random() - 0.5) * 2;
-                this.vy = (Math.random() - 0.5) * 2;
+                // Vetores de velocidade inicial
+                this.vx = (Math.random() - 0.5) * 3;
+                this.vy = (Math.random() - 0.5) * 3;
                 
                 // Características físicas
-                this.alpha = Math.random() * 0.4 + 0.2;
-                this.decay = Math.random() * 0.004 + 0.002;
+                this.alpha = Math.random() * 0.5 + 0.3;
+                this.decay = Math.random() * 0.005 + 0.002;
                 
-                // Tipos de partícula (fumaça volumosa ou fagulhas brilhantes)
+                // Tipos de partícula (fumaça volumosa de neon ou fagulhas afiadas reluzentes)
                 this.type = Math.random() > 0.4 ? 'smoke' : 'spark';
-                this.size = this.type === 'smoke' ? Math.random() * 40 + 20 : Math.random() * 2 + 1;
+                this.size = this.type === 'smoke' ? Math.random() * 50 + 25 : Math.random() * 3 + 1.5;
                 this.baseSize = this.size;
-                this.hueOffset = Math.random() * 50; 
+                this.hueOffset = Math.random() * 60; 
             }
 
             update() {
-                // Interação com o mouse (Apenas se a música estiver ativa e o mouse se mover)
-                if (isPlaying && mouse.x !== null) {
+                // SÓ INTERAGE se a música estiver tocando AND o clique do mouse estiver pressionado
+                if (isPlaying && mouse.down && mouse.x !== null) {
                     let dx = mouse.x - this.x;
                     let dy = mouse.y - this.y;
                     let dist = Math.sqrt(dx * dx + dy * dy);
+                    let radius = 280; // Raio de influência da setinha
 
-                    if (dist < attractionRadius()) {
-                        let force = (attractionRadius() - dist) / attractionRadius();
-                        
-                        // Direção de repulsão orbital cósmica
-                        let repulseX = (dx / dist) * force * -4;
-                        let repulseY = (dy / dist) * force * -4;
+                    if (dist < radius) {
+                        let force = (radius - dist) / radius;
 
-                        // Adiciona a inércia e velocidade de arraste do mouse (desenho de fumaça)
-                        let dragX = mouse.vx * force * 1.8;
-                        let dragY = mouse.vy * force * 1.8;
-
-                        this.vx += repulseX + dragX;
-                        this.vy += repulseY + dragY;
-
-                        // Partículas de fumaça se expandem no vácuo ao toque
-                        if (this.type === 'smoke') {
-                            this.size = this.baseSize * (1 + force * 1.5);
+                        // PROCESSAMENTO DA SUTILEZA DE CADA UM DOS 32 EFEITOS INTERATIVOS ALEATÓRIOS
+                        switch (currentEffectIndex) {
+                            case 0: // Magnetismo Reverso (Repele violentamente)
+                                this.vx += (dx / dist) * force * -8;
+                                this.vy += (dy / dist) * force * -8;
+                                break;
+                            case 1: // Atração Gravitacional (Puxa para a setinha)
+                                this.vx += (dx / dist) * force * 5;
+                                this.vy += (dy / dist) * force * 5;
+                                break;
+                            case 2: // Vórtice de Andrômeda (Orbita o mouse em sentido horário)
+                                this.vx += (dy / dist) * force * 7;
+                                this.vy += (-dx / dist) * force * 7;
+                                break;
+                            case 3: // Ciclone Espacial (Orbita em sentido anti-horário)
+                                this.vx += (-dy / dist) * force * 7;
+                                this.vy += (dx / dist) * force * 7;
+                                break;
+                            case 4: // Onda de Choque (Pulsações de afastamento intermitentes)
+                                let pulse = Math.sin(Date.now() * 0.02) * 10;
+                                this.vx += (dx / dist) * force * pulse;
+                                this.vy += (dy / dist) * force * pulse;
+                                break;
+                            case 5: // Vento Solar Turbulento (Acompanha a velocidade da setinha)
+                                this.vx += mouse.vx * force * 1.5;
+                                this.vy += mouse.vy * force * 1.5;
+                                break;
+                            case 6: // Buraco Negro Estelar (Puxa e implode partículas reduzindo tamanho)
+                                this.vx += (dx / dist) * force * 9;
+                                this.vy += (dy / dist) * force * 9;
+                                this.size *= 0.95;
+                                break;
+                            case 7: // RGB Quantum Split (Aumenta velocidade no eixo X/Y dependendo da posição)
+                                this.vx += (dy / dist) * force * 5;
+                                this.vy += (dx / dist) * force * 5;
+                                break;
+                            case 8: // Dobra Espacial (Distorce em formato de espiral rápida)
+                                let angle = Math.atan2(dy, dx) + 0.5;
+                                this.vx += Math.cos(angle) * force * -6;
+                                this.vy += Math.sin(angle) * force * -6;
+                                break;
+                            case 9: // Fagulhas de Antimatéria (Explode o alpha das partículas)
+                                this.alpha = Math.min(1, this.alpha + 0.02);
+                                this.vx += (dx / dist) * force * -10;
+                                this.vy += (dy / dist) * force * -10;
+                                break;
+                            case 10: // Expansão Cosmológica (Aumenta o tamanho imensamente perto do mouse)
+                                this.size = this.baseSize * (1 + force * 4.0);
+                                this.vx += (dx / dist) * force * -3;
+                                this.vy += (dy / dist) * force * -3;
+                                break;
+                            case 11: // Gravidade Quântica (Combina empurrão e vento lateral)
+                                this.vx += (dx / dist) * force * -4 + mouse.vy * force;
+                                this.vy += (dy / dist) * force * -4 + mouse.vx * force;
+                                break;
+                            case 12: // Fluxo Caótico (Senos e cossenos bagunçam as direções)
+                                this.vx += Math.sin(this.y * 0.05) * force * 4;
+                                this.vy += Math.cos(this.x * 0.05) * force * 4;
+                                break;
+                            case 13: // Aurora Estelar (Altera cores de forma rápida ao toque)
+                                this.hueOffset = (this.hueOffset + 5) % 360;
+                                this.vx += (dx / dist) * force * -2;
+                                this.vy += (dy / dist) * force * -2;
+                                break;
+                            case 14: // Pulsação de Supernova (Partículas expandem e encolhem ritmicamente)
+                                let supernova = Math.sin(Date.now() * 0.01) * 3 + 1;
+                                this.size = this.baseSize * supernova;
+                                break;
+                            case 15: // Anéis de Saturno (Estabiliza as partículas em uma distância fixa da setinha)
+                                let targetDist = 130;
+                                let diff = dist - targetDist;
+                                this.vx -= (dx / dist) * diff * 0.15;
+                                this.vy -= (dy / dist) * diff * 0.15;
+                                break;
+                            case 16: // Congelamento Temporal (Reduz drasticamente a velocidade)
+                                this.vx *= 0.3;
+                                this.vy *= 0.3;
+                                break;
+                            case 17: // Rede de Neutrinos (Fios se formam mais grossos)
+                                this.vx += (dx / dist) * force * -5;
+                                this.vy += (dy / dist) * force * -5;
+                                break;
+                            case 18: // Rastro de Cometa (Deixa os decaimentos muito menores gerando caudas longas)
+                                this.decay = 0.001;
+                                this.vx += mouse.vx * force * 2;
+                                this.vy += mouse.vy * force * 2;
+                                break;
+                            case 19: // Vento Galáctico (Empurra todas para cima e para a direita do mouse)
+                                this.vx += force * 5;
+                                this.vy -= force * 5;
+                                break;
+                            case 20: // Inversão Espacial (Faz as partículas voarem para o lado oposto da velocidade do mouse)
+                                this.vx -= mouse.vx * force * 2;
+                                this.vy -= mouse.vy * force * 2;
+                                break;
+                            case 21: // Super-Gravidade (Empurra partículas para longe de forma ultra-veloz)
+                                this.vx += (dx / dist) * force * -15;
+                                this.vy += (dy / dist) * force * -15;
+                                break;
+                            case 22: // Onda Senoidal Térmica (Cria movimentos de serpente vertical)
+                                this.vx += (dx / dist) * force * -3;
+                                this.vy += Math.sin(this.x * 0.1) * force * 6;
+                                break;
+                            case 23: // Turbulência de Plasma (Flutuação ruidosa extrema)
+                                this.vx += (Math.random() - 0.5) * force * 12;
+                                this.vy += (Math.random() - 0.5) * force * 12;
+                                break;
+                            case 24: // Refração Espelho (As velocidades replicam inversamente)
+                                this.vx = -this.vx * 0.9 + (dx / dist) * force * -4;
+                                this.vy = -this.vy * 0.9 + (dy / dist) * force * -4;
+                                break;
+                            case 25: // Fricção Energética (Esfria a partícula gerando fagulhas extras)
+                                this.decay = 0.015;
+                                this.vx += (dx / dist) * force * -6;
+                                break;
+                            case 26: // Propulsão de Quasar (Força de ejeção angular constante)
+                                this.vx += Math.cos(this.y) * force * 5;
+                                this.vy += Math.sin(this.x) * force * 5;
+                                break;
+                            case 27: // Pó de Diamante (Encolhe muito e acelera)
+                                this.size = this.baseSize * 0.3;
+                                this.vx += (dx / dist) * force * -12;
+                                this.vy += (dy / dist) * force * -12;
+                                break;
+                            case 28: // Hiper-Velocidade Warp (Velocidade limite alcançada)
+                                this.vx += (dx / dist) * force * -22;
+                                this.vy += (dy / dist) * force * -22;
+                                break;
+                            case 29: // Elasticidade de Supercordas (Puxa e balança elasticamente)
+                                this.vx += (dx / dist) * Math.sin(dist * 0.05) * 6;
+                                this.vy += (dy / dist) * Math.sin(dist * 0.05) * 6;
+                                break;
+                            case 30: // Vórtice Escuro (Giro orbital duplo estendido)
+                                this.vx += (dy / dist) * force * 11;
+                                this.vy += (-dx / dist) * force * 11;
+                                break;
+                            case 31: // Reflexão Dimensional (Bate e rebate na setinha)
+                                this.vx += (dx / dist) * force * -9;
+                                this.vy += (dy / dist) * force * 9;
+                                break;
                         }
                     }
                 }
 
-                // Aplica atrito de viscosidade (Mantém movimentos suaves sem travamentos)
+                // Aplica atrito de viscosidade do fluido (Mantém movimentos macios)
                 this.vx *= 0.95;
                 this.vy *= 0.95;
 
-                // Move
+                // Executa movimento
                 this.x += this.vx;
                 this.y += this.vy;
 
-                // Consome a opacidade da fumaça (Simula evaporação)
+                // REBATE NAS BORDAS E VOLTA (Física de colisão elástica nas paredes da tela!)
+                if (this.x < 0) {
+                    this.x = 0;
+                    this.vx *= -0.85; // Bate e rebate perdendo um pouco de energia para naturalidade
+                }
+                if (this.x > canvas.width) {
+                    this.x = canvas.width;
+                    this.vx *= -0.85;
+                }
+                if (this.y < 0) {
+                    this.y = 0;
+                    this.vy *= -0.85;
+                }
+                if (this.y > canvas.height) {
+                    this.y = canvas.height;
+                    this.vy *= -0.85;
+                }
+
+                // Consome opacidade (evaporação natural)
                 this.alpha -= this.decay;
 
-                // Margens limpas: Se sair da tela ou evaporar, reseta
-                if (this.alpha <= 0 || this.x < 0 || this.x > canvas.width || this.y < 0 || this.y > canvas.height) {
+                // Se evaporar totalmente, reseta em uma nova posição
+                if (this.alpha <= 0) {
                     this.reset(false);
                 }
             }
@@ -274,19 +437,20 @@
                 ctx.save();
                 ctx.globalCompositeOperation = "screen";
 
-                // Cálculo da matiz neon cíclica baseada no tempo global com base em colorPulse agora existente
+                // Matiz baseada no pulsar global e no deslocamento próprio
                 let hue = Math.floor(colorPulse + this.hueOffset) % 360;
 
                 if (this.type === 'smoke') {
-                    // Desenha fumaça volumosa de neon com variações de cores ricas e dinâmicas
+                    // Gradientes radiais ultra reluzentes imitando fumaça volumosa de neon
                     let grad = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.size);
                     if (isPlaying) {
-                        grad.addColorStop(0, `hsla(${hue}, 90%, 65%, ${this.alpha * 0.4})`);
-                        grad.addColorStop(0.5, `hsla(${(hue + 40) % 360}, 85%, 55%, ${this.alpha * 0.15})`);
+                        // Cores extremamente vivas quando a música está rodando
+                        grad.addColorStop(0, `hsla(${hue}, 95%, 60%, ${this.alpha * 0.45})`);
+                        grad.addColorStop(0.5, `hsla(${(hue + 50) % 360}, 90%, 50%, ${this.alpha * 0.2})`);
                         grad.addColorStop(1, 'transparent');
                     } else {
-                        // Quando inativo: Fumaça branca estelar opaca e fria
-                        grad.addColorStop(0, `rgba(255, 255, 255, ${this.alpha * 0.12})`);
+                        // Fumaça inativa: estelar fria esbranquiçada
+                        grad.addColorStop(0, `rgba(255, 255, 255, ${this.alpha * 0.1})`);
                         grad.addColorStop(1, 'transparent');
                     }
                     ctx.fillStyle = grad;
@@ -294,13 +458,13 @@
                     ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
                     ctx.fill();
                 } else {
-                    // Fagulhas e fios brilhantes
+                    // Pequenas fagulhas brilhantes e intensas (Brilho e Quasar)
                     if (isPlaying) {
                         ctx.shadowBlur = this.size * 5;
-                        ctx.shadowColor = `hsla(${hue}, 100%, 70%, 0.8)`;
-                        ctx.fillStyle = `hsla(${(hue - 20) % 360}, 100%, 80%, ${this.alpha * 0.9})`;
+                        ctx.shadowColor = `hsla(${hue}, 100%, 65%, 0.85)`;
+                        ctx.fillStyle = `hsla(${(hue - 20) % 360}, 100%, 80%, ${this.alpha * 0.95})`;
                     } else {
-                        ctx.fillStyle = `rgba(255, 255, 255, ${this.alpha * 0.4})`;
+                        ctx.fillStyle = `rgba(255, 255, 255, ${this.alpha * 0.35})`;
                     }
                     ctx.beginPath();
                     ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
@@ -310,7 +474,7 @@
             }
         }
 
-        // Inicializador de partículas
+        // Inicializador da nuvem de fluido
         function initParticles() {
             particles = [];
             for (let i = 0; i < maxParticles; i++) {
@@ -319,30 +483,22 @@
             }
         }
 
-        // Retorna raio de atração/interação dinâmico
-        function attractionRadius() {
-            // Se o mouse estiver se movendo rápido, o alcance da onda aumenta
-            let speed = Math.sqrt(mouse.vx * mouse.vx + mouse.vy * mouse.vy);
-            return Math.min(350, 180 + speed * 12);
-        }
-
-        // Loop de Renderização Principal
+        // Loop Principal de Física e Desenho
         function animate() {
-            // EFEITO DE RASTRO PERSISTENTE (Crucial para fumaça de neon/fios ficarem fluidos e macios)
-            ctx.fillStyle = "rgba(2, 2, 5, 0.07)";
+            // Efeito de rastro persistente (Gera o visual de fumaça lisa e contínua)
+            ctx.fillStyle = "rgba(2, 2, 5, 0.08)";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Incrementa ciclo de cores de neon infinitamente
             if (isPlaying) {
                 colorHue = (colorHue + 0.15) % 360;
-                colorPulse = (colorPulse + 0.5) % 360; // INCREMENTO SEGURO DA VARIÁVEL DE PULSAÇÃO
-                intensityPulse = Math.sin(Date.now() * 0.002) * 0.15 + 0.85;
+                colorPulse = (colorPulse + 0.4) % 360; // Pulsação segura e estável
+                intensityPulse = Math.sin(Date.now() * 0.0025) * 0.15 + 0.85;
 
-                // Desenha pulsação luminosa de fundo neon que aumenta e diminui suavemente
+                // Luz ambiente de preenchimento neon que brilha no fundo
                 drawGlobalAmbientGlow();
             }
 
-            // Atualiza e desenha fumaça e fluidos
+            // Atualiza e desenha fumaças e partículas
             for (let i = 0; i < particles.length; i++) {
                 particles[i].update();
                 particles[i].draw();
@@ -363,14 +519,36 @@
                 canvas.width / 2, canvas.height / 2, 10,
                 canvas.width / 2, canvas.height / 2, Math.max(canvas.width, canvas.height) * 0.8
             );
-            centerGlow.addColorStop(0, `hsla(${colorHue}, 95%, 45%, ${0.05 * intensityPulse})`);
+            centerGlow.addColorStop(0, `hsla(${colorHue}, 95%, 45%, ${0.06 * intensityPulse})`);
             centerGlow.addColorStop(1, "transparent");
             ctx.fillStyle = centerGlow;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             ctx.restore();
         }
 
-        // Rastreamento preciso do ponteiro do mouse
+        // Rastreamento dinâmico do clique e arrasto
+        window.addEventListener('mousedown', () => {
+            if (isPlaying) {
+                mouse.down = true;
+                // Escolhe um efeito aleatório da lista de 32 a cada clique!
+                currentEffectIndex = Math.floor(Math.random() * effectNames.length);
+                
+                // Exibe no HUD holográfico qual efeito foi selecionado
+                const indicator = document.getElementById('effectIndicator');
+                indicator.innerText = `COSMOS: ${effectNames[currentEffectIndex]}`;
+                indicator.classList.remove('opacity-0', 'scale-90');
+                indicator.classList.add('opacity-100', 'scale-100');
+            }
+        });
+
+        window.addEventListener('mouseup', () => {
+            mouse.down = false;
+            // Oculta o indicador de efeito cósmico
+            const indicator = document.getElementById('effectIndicator');
+            indicator.classList.remove('opacity-100', 'scale-100');
+            indicator.classList.add('opacity-0', 'scale-90');
+        });
+
         window.addEventListener('mousemove', (e) => {
             if (mouse.x !== null && mouse.y !== null) {
                 mouse.vx = e.clientX - mouse.x;
@@ -385,6 +563,7 @@
             mouse.y = null;
             mouse.vx = 0;
             mouse.vy = 0;
+            mouse.down = false;
         });
 
         // Configuração Inicial de Execução
@@ -407,7 +586,7 @@
                 document.getElementById('statusIndicator').className = "h-2 w-2 rounded-full bg-emerald-500 animate-pulse";
                 document.getElementById('statusText').innerText = "SINFONIA DE NEON COMPLETAMENTE ATIVA";
 
-                // Inicia transição e esconde todos os componentes de interface
+                // Inicia transição e esconde todos os componentes de interface para liberar o desenho livre
                 toggleInterface(true);
             }).catch(err => {
                 console.warn("Autoplay rejeitado pelo navegador.", err);
@@ -419,6 +598,7 @@
             playSfx('click');
             musicPlayer.pause();
             isPlaying = false;
+            mouse.down = false;
 
             // Restaura textos padrão
             document.getElementById('nowPlayingText').innerText = "NENHUMA FAIXA ATIVA";
@@ -427,11 +607,17 @@
 
             // Restaura componentes de interface originais
             toggleInterface(false);
+
+            // Esconde HUD de efeito
+            const indicator = document.getElementById('effectIndicator');
+            indicator.classList.remove('opacity-100', 'scale-100');
+            indicator.classList.add('opacity-0', 'scale-90');
         }
 
         // Monitor de encerramento da música (Quando a música acaba, a interface retorna automaticamente)
         musicPlayer.addEventListener('ended', () => {
             isPlaying = false;
+            mouse.down = false;
             document.getElementById('nowPlayingText').innerText = "NENHUMA FAIXA ATIVA";
             document.getElementById('statusIndicator').className = "h-2 w-2 rounded-full bg-red-500 animate-pulse";
             document.getElementById('statusText').innerText = "SINFONIA INATIVA (SELECIONE UMA MÚSICA)";
@@ -451,12 +637,12 @@
             const stopBtnContainer = document.getElementById('stopButtonContainer');
 
             if (hide) {
-                // Esconde interface
+                // Esconde interface de forma extremamente suave
                 uiTitle.classList.add('opacity-0', 'scale-95', 'pointer-events-none');
                 playerCard.classList.add('opacity-0', 'scale-95', 'pointer-events-none');
                 uiHeader.classList.add('opacity-0', 'pointer-events-none');
 
-                // Revela apenas o botão futurista de parar música após delay
+                // Revela apenas o botão futurista de parar música no rodapé
                 setTimeout(() => {
                     stopBtnContainer.classList.remove('hidden');
                     setTimeout(() => {
@@ -471,36 +657,12 @@
                 setTimeout(() => {
                     stopBtnContainer.classList.add('hidden');
                     
-                    // Restaura interface principal
+                    // Restaura interface principal completa
                     uiTitle.classList.remove('opacity-0', 'scale-95', 'pointer-events-none');
                     playerCard.classList.remove('opacity-0', 'scale-95', 'pointer-events-none');
                     uiHeader.classList.remove('opacity-0', 'pointer-events-none');
                 }, 400);
             }
-        }
-
-        // Modais básicos e limpos para opções e encerramento
-        function openModal(id) {
-            playSfx('click');
-            const modal = document.getElementById(`modal-${id}`);
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-        }
-
-        function closeModal(id) {
-            playSfx('click');
-            const modal = document.getElementById(`modal-${id}`);
-            modal.classList.add('hidden');
-            modal.classList.remove('flex');
-        }
-
-        function exitApp() {
-            playSfx('click');
-            document.body.innerHTML = `
-                <div class="h-full w-full bg-[#020205] flex flex-col items-center justify-center text-center p-6">
-                    <p class="title-celestial text-sm tracking-[0.5em] text-slate-500 uppercase">Simulação encerrada com sucesso.</p>
-                </div>
-            `;
         }
     </script>
 </body>
