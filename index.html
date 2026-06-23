@@ -75,7 +75,7 @@
             <h1 class="title-celestial text-4xl font-extrabold uppercase text-transparent bg-clip-text bg-gradient-to-b from-white via-slate-100 to-purple-200 drop-shadow-md">
                 BEAT IT<br><span class="text-xl font-light tracking-[0.4em] text-purple-300">RHYTHM EXPERIENCE</span>
             </h1>
-            <p class="text-xs text-slate-400 leading-relaxed px-4">
+            <p id="gameDescription" class="text-xs text-slate-400 leading-relaxed px-4">
                 Use as teclas <strong class="text-purple-300">1, 2 e 3</strong> do seu teclado ou clique nas teclas na tela. Segure o clique do mouse nas teclas para liberar rastros de glitter!
             </p>
         </div>
@@ -107,6 +107,50 @@
 
     <!-- ================= SISTEMAS FÍSICOS E DE INTERAÇÃO ================= -->
     <script>
+        // Efeitos Sonoros Dinâmicos (Web Audio API)
+        const playSfx = (type) => {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                
+                if (type === 'hover') {
+                    osc.frequency.setValueAtTime(180, ctx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(280, ctx.currentTime + 0.12);
+                    gain.gain.setValueAtTime(0.01, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
+                    osc.start();
+                    osc.stop(ctx.currentTime + 0.12);
+                } else if (type === 'click') {
+                    osc.frequency.setValueAtTime(140, ctx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(380, ctx.currentTime + 0.2);
+                    gain.gain.setValueAtTime(0.04, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2);
+                    osc.start();
+                    osc.stop(ctx.currentTime + 0.2);
+                } else if (type === 'synth_beat') {
+                    // Batida sintetizada para o modo de fallback
+                    osc.frequency.setValueAtTime(120, ctx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(30, ctx.currentTime + 0.15);
+                    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+                    osc.start();
+                    osc.stop(ctx.currentTime + 0.15);
+                } else if (type === 'synth_miss') {
+                    // Som de nota errada sintetizado
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(90, ctx.currentTime);
+                    osc.frequency.linearRampToValueAtTime(50, ctx.currentTime + 0.4);
+                    gain.gain.setValueAtTime(0.15, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+                    osc.start();
+                    osc.stop(ctx.currentTime + 0.4);
+                }
+            } catch (e) { /* Fallback silencioso */ }
+        };
+
         // Timestamps exatos das batidas fornecidos por ti
         const beatTimestamps = [
             0.348, 2.090, 3.738, 5.480, 7.198, 8.963, 10.658, 11.122, 11.540, 11.958, 
@@ -126,6 +170,9 @@
         let comboStreak = 0;
         let isHitSuccess = false;
         let lastTime = 0;
+        let useSynthesizedFallback = false; // Flag para usar áudio simulado se o MP3 falhar
+        let virtualTime = 0; // Controla o tempo simulado
+        let lastSystemTime = 0;
 
         // Elementos da página
         const canvas = document.getElementById('gameCanvas');
@@ -138,51 +185,60 @@
         function setupAudioGraph() {
             if (audioCtx) return; // Já configurado
 
-            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            audioSource = audioCtx.createMediaElementSource(musicPlayer);
+            try {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                audioSource = audioCtx.createMediaElementSource(musicPlayer);
 
-            dryGain = audioCtx.createGain();
-            wetGain = audioCtx.createGain();
+                dryGain = audioCtx.createGain();
+                wetGain = audioCtx.createGain();
 
-            // Configurar Delay (Eco)
-            delayNode = audioCtx.createDelay(2.0);
-            delayNode.delayTime.value = 0.35; // Tempo do eco (350ms)
-            feedbackGain = audioCtx.createGain();
-            feedbackGain.gain.value = 0.55; // Intensidade do feedback de eco
+                // Configurar Delay (Eco)
+                delayNode = audioCtx.createDelay(2.0);
+                delayNode.delayTime.value = 0.35; // Tempo do eco (350ms)
+                feedbackGain = audioCtx.createGain();
+                feedbackGain.gain.value = 0.55; // Intensidade do feedback de eco
 
-            // Configurar Reverb Sintetizado de Longo Decaimento (Para evitar arquivos externos)
-            convolver = audioCtx.createConvolver();
-            const rate = audioCtx.sampleRate;
-            const len = rate * 4.0; // 4 segundos de cauda de reverb
-            const impulse = audioCtx.createBuffer(2, len, rate);
-            const left = impulse.getChannelData(0);
-            const right = impulse.getChannelData(1);
-            for (let i = 0; i < len; i++) {
-                const decay = Math.exp(-i / (rate * 0.8));
-                left[i] = (Math.random() * 2 - 1) * decay;
-                right[i] = (Math.random() * 2 - 1) * decay;
+                // Configurar Reverb Sintetizado de Longo Decaimento (Para evitar arquivos externos)
+                convolver = audioCtx.createConvolver();
+                const rate = audioCtx.sampleRate;
+                const len = rate * 4.0; // 4 segundos de cauda de reverb
+                const impulse = audioCtx.createBuffer(2, len, rate);
+                const left = impulse.getChannelData(0);
+                const right = impulse.getChannelData(1);
+                for (let i = 0; i < len; i++) {
+                    const decay = Math.exp(-i / (rate * 0.8));
+                    left[i] = (Math.random() * 2 - 1) * decay;
+                    right[i] = (Math.random() * 2 - 1) * decay;
+                }
+                convolver.buffer = impulse;
+
+                // Roteamento de Sinal
+                audioSource.connect(dryGain);
+                audioSource.connect(delayNode);
+
+                // Loop de Feedback do Eco
+                delayNode.connect(feedbackGain);
+                feedbackGain.connect(delayNode);
+
+                // Conectar o Eco ao Reverb
+                delayNode.connect(convolver);
+                convolver.connect(wetGain);
+
+                // Conectar saídas ao destino final (Altifalantes)
+                dryGain.connect(audioCtx.destination);
+                wetGain.connect(audioCtx.destination);
+
+                // Estado inicial: Som direto ligado, efeito mudo
+                dryGain.gain.setValueAtTime(1.0, audioCtx.currentTime);
+                wetGain.gain.setValueAtTime(0.0, audioCtx.currentTime);
+            } catch (error) {
+                console.warn("Navegador impediu ou falhou ao criar conexões de áudio complexas. Usando fallback simples de áudio direto.", error);
+                // Define as variáveis como nulas para que os métodos de efeito bypassen sem travar o jogo
+                audioCtx = null;
+                audioSource = null;
+                dryGain = null;
+                wetGain = null;
             }
-            convolver.buffer = impulse;
-
-            // Roteamento de Sinal
-            audioSource.connect(dryGain);
-            audioSource.connect(delayNode);
-
-            // Loop de Feedback do Eco
-            delayNode.connect(feedbackGain);
-            feedbackGain.connect(delayNode);
-
-            // Conectar o Eco ao Reverb
-            delayNode.connect(convolver);
-            convolver.connect(wetGain);
-
-            // Conectar saídas ao destino final (Altifalantes)
-            dryGain.connect(audioCtx.destination);
-            wetGain.connect(audioCtx.destination);
-
-            // Estado inicial: Som direto ligado, efeito mudo
-            dryGain.gain.setValueAtTime(1.0, audioCtx.currentTime);
-            wetGain.gain.setValueAtTime(0.0, audioCtx.currentTime);
         }
 
         // --- SISTEMAS DE RENDERIZAÇÃO DO CANVAS (GLITTER E NOTAS) ---
@@ -276,16 +332,16 @@
                 ctx.stroke();
 
                 // Rótulo da tecla (1, 2, 3)
-                ctx.fillStyle = isTarget ? "#ffffff" : "rgba(255,255,255,0.6)";
-                ctx.font = "bold 20px 'Space Grotesk', sans-serif";
+                ctx.fillStyle = "#ffffff";
+                ctx.font = "bold 16px 'Space Grotesk', sans-serif";
                 ctx.textAlign = "center";
                 ctx.textBaseline = "middle";
-                ctx.fillText(kp.label, x + keyWidth / 2, y + keyHeight / 2);
+                ctx.fillText(kp.label, kp.currentX, kp.currentY);
                 ctx.restore();
             });
         }
 
-        // Desenha a esfera voadora e seu rastro
+        // Desenha a esfera voadora e seu rastro em direção às notas de piano
         function updateAndDrawOrb(time) {
             if (!isPlaying || currentBeatIndex >= beatTimestamps.length) return;
 
@@ -334,7 +390,15 @@
             ctx.fillStyle = "rgba(1, 1, 3, 0.15)";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            const currentTime = musicPlayer.currentTime;
+            // Incremento do tempo virtual se estiver no modo de simulação/fallback
+            if (isPlaying && useSynthesizedFallback && !isPausedByMiss) {
+                const now = performance.now();
+                const dt = (now - lastSystemTime) / 1000;
+                virtualTime += dt;
+                lastSystemTime = now;
+            }
+
+            const currentTime = useSynthesizedFallback ? virtualTime : musicPlayer.currentTime;
 
             // Desenha Teclas e Esfera
             drawVirtualKeys();
@@ -360,12 +424,24 @@
                         const targetKey = keyPositions.find(k => k.id === targetKeys[currentBeatIndex]);
                         triggerHitExplosion(targetKey.currentX, targetKey.currentY, targetKey.color);
                         
+                        // Toca batida sintetizada se estiver no modo de fallback
+                        if (useSynthesizedFallback) {
+                            playSfx('synth_beat');
+                        }
+
                         isHitSuccess = false;
                         currentBeatIndex++;
                         comboStreak++;
-                        document.getElementById('streakCounter').innerText = `COMBO: ${comboStreak}`;
+                        document.getElementById('streakCounter').innerText = comboStreak;
                     } else {
-                        // Falhou ou demorou muito: PAUSA INSTANTÂNEA com efeito reverb/eco
+                        // Perdeu o tempo (Miss)
+                        isPausedByMiss = true;
+                        if (!useSynthesizedFallback) {
+                            musicPlayer.pause();
+                        }
+                        // Altera o estado do HUD
+                        document.getElementById('gameStatusIndicator').className = "h-2 w-2 rounded-full bg-red-500 animate-pulse";
+                        document.getElementById('gameStatusText').innerText = "SUSPENSO (AGUARDANDO NOTA)";
                         triggerMissPause();
                     }
                 }
@@ -385,30 +461,38 @@
         function triggerMissPause() {
             isPausedByMiss = true;
             comboStreak = 0;
-            document.getElementById('streakCounter').innerText = `COMBO: ${comboStreak}`;
+            document.getElementById('streakCounter').innerText = comboStreak;
             
+            // Toca som de erro sintetizado no modo de fallback
+            if (useSynthesizedFallback) {
+                playSfx('synth_miss');
+            }
+
             // Alterar o HUD para estado suspenso
             document.getElementById('gameStatusIndicator').className = "h-2 w-2 rounded-full bg-red-500 animate-pulse";
             document.getElementById('gameStatusText').innerText = "SUSPENSO (AGUARDANDO NOTA)";
 
-            // Ativa o sinal de efeito Reverb + Eco no Web Audio
-            wetGain.gain.cancelScheduledValues(audioCtx.currentTime);
-            dryGain.gain.cancelScheduledValues(audioCtx.currentTime);
+            if (!useSynthesizedFallback && audioCtx && wetGain && dryGain) {
+                // Ativa o sinal de efeito Reverb + Eco no Web Audio
+                wetGain.gain.cancelScheduledValues(audioCtx.currentTime);
+                dryGain.gain.cancelScheduledValues(audioCtx.currentTime);
 
-            // Corta o áudio seco imediatamente
-            dryGain.gain.setValueAtTime(0.0, audioCtx.currentTime);
-            // Liga o efeito espacial com intensidade máxima
-            wetGain.gain.setValueAtTime(1.0, audioCtx.currentTime);
+                // Corta o áudio seco imediatamente
+                dryGain.gain.setValueAtTime(0.0, audioCtx.currentTime);
+                // Liga o efeito espacial com intensidade máxima
+                wetGain.gain.setValueAtTime(1.0, audioCtx.currentTime);
+                // Agenda o decaimento gradual do eco por 10 segundos
+                wetGain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 10.0);
+            }
 
             // Permite que o último milissegundo de áudio alimente o eco, depois pausa o player após 50ms
-            setTimeout(() => {
-                if (isPausedByMiss) {
-                    musicPlayer.pause();
-                }
-            }, 50);
-
-            // Agenda o decaimento gradual do eco por 10 segundos
-            wetGain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 10.0);
+            if (!useSynthesizedFallback) {
+                setTimeout(() => {
+                    if (isPausedByMiss) {
+                        musicPlayer.pause();
+                    }
+                }, 50);
+            }
         }
 
         // Restaura a música continuamente após pressionar a nota correta
@@ -416,21 +500,29 @@
             if (!isPausedByMiss) return;
 
             setupAudioGraph();
-            audioCtx.resume();
-
-            // Restaura o som direto (dry) e desliga o efeito wet
-            wetGain.gain.cancelScheduledValues(audioCtx.currentTime);
-            dryGain.gain.cancelScheduledValues(audioCtx.currentTime);
-            dryGain.gain.setValueAtTime(1.0, audioCtx.currentTime);
-            wetGain.gain.setValueAtTime(0.0, audioCtx.currentTime);
+            
+            if (!useSynthesizedFallback && audioCtx && dryGain && wetGain) {
+                audioCtx.resume();
+                // Restaura o som direto (dry) e desliga o efeito wet
+                wetGain.gain.cancelScheduledValues(audioCtx.currentTime);
+                dryGain.gain.cancelScheduledValues(audioCtx.currentTime);
+                dryGain.gain.setValueAtTime(1.0, audioCtx.currentTime);
+                wetGain.gain.setValueAtTime(0.0, audioCtx.currentTime);
+            }
 
             // Retoma a música exatamente do início do beat
             isPausedByMiss = false;
             isHitSuccess = true; // Seta como sucesso para a transição
             
-            // Corrige o tempo de reprodução para o beat atual de forma limpa
-            musicPlayer.currentTime = beatTimestamps[currentBeatIndex];
-            musicPlayer.play();
+            if (useSynthesizedFallback) {
+                virtualTime = beatTimestamps[currentBeatIndex];
+                lastSystemTime = performance.now();
+                playSfx('synth_beat');
+            } else {
+                // Corrige o tempo de reprodução para o beat atual de forma limpa
+                musicPlayer.currentTime = beatTimestamps[currentBeatIndex];
+                musicPlayer.play();
+            }
 
             // Retorna o HUD para estado ativo
             document.getElementById('gameStatusIndicator').className = "h-2 w-2 rounded-full bg-emerald-500 animate-pulse";
@@ -452,7 +544,7 @@
             } else {
                 // Durante a gameplay ativa
                 const requiredKey = targetKeys[currentBeatIndex];
-                const currentTime = musicPlayer.currentTime;
+                const currentTime = useSynthesizedFallback ? virtualTime : musicPlayer.currentTime;
                 const nextBeat = beatTimestamps[currentBeatIndex];
 
                 // Permite o acerto apenas se estiver na janela de ação de 0.6s
@@ -482,6 +574,8 @@
 
         // --- CONTROLES DE INICIALIZAÇÃO E FLUXO ---
         function initGame() {
+            // Ativa Web Audio API e inicia áudio
+            setupAudioGraph();
             playSfx('click');
             
             // Oculta tela inicial
@@ -497,22 +591,35 @@
                 gameUI.classList.add('opacity-100');
             }, 200);
 
-            // Ativa Web Audio API e inicia áudio
-            setupAudioGraph();
-            audioCtx.resume();
+            if (audioCtx) {
+                audioCtx.resume();
+            }
             
             isPlaying = true;
             isPausedByMiss = false;
             isHitSuccess = false;
             currentBeatIndex = 0;
             comboStreak = 0;
-            musicPlayer.currentTime = 0;
-            musicPlayer.play();
+
+            if (useSynthesizedFallback) {
+                virtualTime = 0;
+                lastSystemTime = performance.now();
+            } else {
+                musicPlayer.currentTime = 0;
+                musicPlayer.play().catch(err => {
+                    console.warn("Autoplay bloqueado ou falha de carregamento de áudio. Ativando Sintetizador de Emergência.", err);
+                    useSynthesizedFallback = true;
+                    virtualTime = 0;
+                    lastSystemTime = performance.now();
+                });
+            }
         }
 
         function pauseAndExit() {
             playSfx('click');
-            musicPlayer.pause();
+            if (!useSynthesizedFallback) {
+                musicPlayer.pause();
+            }
             isPlaying = false;
             isPausedByMiss = false;
 
@@ -532,6 +639,16 @@
         function setVolume(value) {
             musicPlayer.volume = value / 100;
         }
+
+        // Gerenciamento amigável de erro de carregamento de áudio (Failsafe)
+        musicPlayer.addEventListener('error', (e) => {
+            console.warn("Erro ao carregar o arquivo 'beatmj.mp3'. Ativando o Sintetizador de Emergência.", musicPlayer.error);
+            useSynthesizedFallback = true;
+            const desc = document.getElementById('gameDescription');
+            if (desc) {
+                desc.innerHTML = "<span class='text-yellow-400 font-bold'>Modo de Demonstração Ativo (Sintetizador Integrado).</span><br>Quando você subir os arquivos corretos para o GitHub Pages ou local, o áudio original do Michael Jackson tocará automaticamente!";
+            }
+        });
 
         // Loop de animação ativo
         window.addEventListener('resize', resize);
